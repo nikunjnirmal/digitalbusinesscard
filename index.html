@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Digital Business Card</title>
+<meta name="description" content="A digital business card you can share by link or QR code.">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='12' width='56' height='40' rx='8' fill='%234f46e5'/%3E%3Ccircle cx='22' cy='30' r='7' fill='white'/%3E%3Crect x='34' y='26' width='18' height='4' rx='2' fill='white'/%3E%3Crect x='34' y='34' width='12' height='4' rx='2' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="qrcode.min.js"></script>
+<style>
+:root {
+  --bg: #eef0f6;
+  --surface: #ffffff;
+  --surface-2: #f6f7fb;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #4f46e5;
+  --accent-2: #7c3aed;
+  --shadow: 0 20px 50px -20px rgba(17, 24, 39, .35), 0 2px 6px rgba(17, 24, 39, .06);
+  --radius: 22px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0d14;
+    --surface: #151925;
+    --surface-2: #1c2130;
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+    --border: #2a3142;
+    --shadow: 0 20px 50px -20px rgba(0, 0, 0, .8), 0 2px 6px rgba(0, 0, 0, .3);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  line-height: 1.45;
+}
+a { color: inherit; }
+button { font: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
+
+/* ---------- Card ---------- */
+.card {
+  --accent: #4f46e5; --accent-2: #7c3aed;
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: relative;
+}
+.card-head {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  padding: 28px 24px 64px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.card-head::before, .card-head::after {
+  content: ""; position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,.10);
+}
+.card-head::before { width: 220px; height: 220px; right: -70px; top: -90px; }
+.card-head::after  { width: 140px; height: 140px; left: -50px; bottom: -70px; }
+.card-company {
+  position: relative; z-index: 1;
+  font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  opacity: .9;
+}
+.avatar {
+  position: absolute; left: 24px; top: -44px; z-index: 2;
+  width: 88px; height: 88px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 32px; font-weight: 800; letter-spacing: -.02em;
+  border: 4px solid var(--surface);
+  box-shadow: 0 8px 20px -6px rgba(0,0,0,.35);
+}
+.avatar span {
+  width: 100%; height: 100%; border-radius: 50%;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.card-body { padding: 56px 24px 24px; position: relative; }
+.card-name { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; word-break: break-word; }
+.card-title { margin: 4px 0 0; color: var(--muted); font-size: 15px; font-weight: 500; }
+.card-title b { color: var(--text); font-weight: 600; }
+
+.rows { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 8px; }
+.row a {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-decoration: none;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.row a:hover { border-color: var(--accent); transform: translateY(-1px); }
+.row .ic {
+  flex: none; width: 38px; height: 38px; border-radius: 11px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.row .ic svg { width: 19px; height: 19px; }
+.row .txt { min-width: 0; }
+.row .lbl { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.row .val { display: block; font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
+
+.socials { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.socials a {
+  width: 46px; height: 46px; border-radius: 14px;
+  display: grid; place-items: center;
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text);
+  transition: transform .15s ease, background .15s ease, color .15s ease;
+}
+.socials a:hover { transform: translateY(-2px); background: var(--accent); color: #fff; border-color: var(--accent); }
+.socials svg { width: 20px; height: 20px; }
+
+.empty-hint { color: var(--muted); font-size: 14px; margin-top: 18px; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-weight: 600; font-size: 15px;
+  text-decoration: none;
+  transition: transform .1s ease, filter .15s ease;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(.98); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff; border-color: transparent;
+  box-shadow: 0 10px 24px -10px var(--accent);
+}
+.btn-primary:hover { filter: brightness(1.07); }
+.btn-block { width: 100%; }
+
+/* ---------- Card view page ---------- */
+.view {
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 32px 16px calc(32px + env(safe-area-inset-bottom));
+}
+.view .card { margin-top: 8px; }
+.actions { width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.actions .btn-primary { grid-column: 1 / -1; padding: 16px; font-size: 16px; }
+.foot { margin-top: 28px; font-size: 13px; color: var(--muted); }
+.foot a { color: var(--muted); }
+
+/* ---------- Builder ---------- */
+.builder { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
+.builder h1 { margin: 0; font-size: clamp(26px, 4vw, 36px); letter-spacing: -.03em; font-weight: 800; }
+.builder .lead { margin: 6px 0 28px; color: var(--muted); font-size: 16px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 32px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+.panel + .panel { margin-top: 20px; }
+.panel h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+.panel .sub { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 560px) { .fields { grid-template-columns: 1fr; } }
+.field.full { grid-column: 1 / -1; }
+.field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.field label .req { color: #e11d48; }
+.field input, .field textarea {
+  width: 100%;
+  padding: 11px 13px;
+  font: inherit; font-size: 15px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.field textarea { resize: vertical; min-height: 70px; }
+.field input:focus, .field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.field input:invalid:not(:placeholder-shown) { border-color: #e11d48; }
+.section-label { grid-column: 1 / -1; margin: 10px 0 -4px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatch { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--surface); outline: 2px solid transparent; padding: 0; }
+.swatch[aria-pressed="true"] { outline-color: var(--text); }
+
+.preview-col { position: sticky; top: 24px; }
+.preview-col .tag { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px 4px; }
+
+.form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+
+.result { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 560px) { .result { grid-template-columns: 1fr; } }
+.qrbox { background: #fff; border-radius: 16px; padding: 10px; border: 1px solid var(--border); }
+.qrbox svg { display: block; width: 100%; height: auto; }
+.linkrow { display: flex; gap: 8px; }
+.linkrow input { flex: 1; min-width: 0; padding: 11px 13px; font: inherit; font-size: 14px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.btnrow .btn { padding: 10px 14px; font-size: 14px; }
+.note {
+  margin-top: 16px; padding: 14px 16px; border-radius: 14px; font-size: 14px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.note b { display: block; margin-bottom: 4px; }
+.note ol { margin: 6px 0 0; padding-left: 20px; }
+.note code { font-size: 13px; background: var(--surface-2); padding: 1px 6px; border-radius: 6px; }
+.warn { background: color-mix(in srgb, #f59e0b 12%, var(--surface)); border-color: color-mix(in srgb, #f59e0b 40%, transparent); }
+
+/* ---------- QR modal ---------- */
+.modal {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(10, 12, 20, .72);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: grid; place-items: center; padding: 16px;
+}
+.modal-inner {
+  width: 100%; max-width: 380px;
+  background: #fff; color: #111827;
+  border-radius: 24px; padding: 24px; text-align: center;
+}
+.modal-inner h3 { margin: 0 0 2px; font-size: 20px; }
+.modal-inner p { margin: 0 0 16px; color: #6b7280; font-size: 14px; }
+.modal-inner .qrbox { border: 0; padding: 0; }
+.modal-inner .btn { margin-top: 16px; background: #f3f4f6; color: #111827; border-color: #e5e7eb; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 60;
+  transform: translateX(-50%) translateY(20px);
+  background: #111827; color: #fff;
+  padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- Card view -->
+<main id="view" class="view" hidden>
+  <div id="viewCard"></div>
+  <div class="actions">
+    <button id="saveBtn" class="btn btn-primary" type="button"></button>
+    <button id="shareBtn" class="btn" type="button"></button>
+    <button id="qrBtn" class="btn" type="button"></button>
+  </div>
+  <div class="foot"><a href="#edit">Make your own card</a></div>
+</main>
+
+<!-- Builder -->
+<main id="builder" class="builder" hidden>
+  <h1>Create your digital business card</h1>
+  <p class="lead">Fill in only what you want to share. Empty fields won’t appear on your card.</p>
+
+  <div class="grid">
+    <div>
+      <form id="form" class="panel" novalidate autocomplete="on">
+        <h2>Your details</h2>
+        <p class="sub">Everything stays in your browser — nothing is uploaded.</p>
+        <div class="fields">
+          <div class="section-label">About you</div>
+          <div class="field"><label for="firstName">First name <span class="req">*</span></label><input id="firstName" name="firstName" autocomplete="given-name" placeholder="Jane" required></div>
+          <div class="field"><label for="lastName">Last name</label><input id="lastName" name="lastName" autocomplete="family-name" placeholder="Doe"></div>
+          <div class="field"><label for="jobTitle">Job title</label><input id="jobTitle" name="jobTitle" autocomplete="organization-title" placeholder="Head of Product"></div>
+          <div class="field"><label for="company">Company name</label><input id="company" name="company" autocomplete="organization" placeholder="Acme Inc."></div>
+
+          <div class="section-label">Contact</div>
+          <div class="field"><label for="phone">Phone number</label><input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+1 555 123 4567"></div>
+          <div class="field"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" placeholder="jane@acme.com"></div>
+          <div class="field full"><label for="address">Office address</label><textarea id="address" name="address" autocomplete="street-address" placeholder="123 Market St, Suite 400, San Francisco, CA 94105"></textarea></div>
+          <div class="field full"><label for="website">Company website</label><input id="website" name="website" inputmode="url" placeholder="acme.com"></div>
+
+          <div class="section-label">Social</div>
+          <div class="field"><label for="linkedin">LinkedIn</label><input id="linkedin" name="linkedin" inputmode="url" placeholder="linkedin.com/in/janedoe"></div>
+          <div class="field"><label for="twitter">X / Twitter</label><input id="twitter" name="twitter" inputmode="url" placeholder="@janedoe or URL"></div>
+          <div class="field"><label for="instagram">Instagram</label><input id="instagram" name="instagram" inputmode="url" placeholder="@janedoe or URL"></div>
+          <div class="field"><label for="facebook">Facebook</label><input id="facebook" name="facebook" inputmode="url" placeholder="facebook.com/janedoe"></div>
+
+          <div class="section-label">Style</div>
+          <div class="field full"><div class="swatches" id="swatches" role="group" aria-label="Card color"></div></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" id="createBtn"></button>
+          <button class="btn" type="button" id="resetBtn">Clear form</button>
+        </div>
+      </form>
+
+      <section id="result" class="panel" hidden>
+        <h2>Your card is ready</h2>
+        <p class="sub">Share the link or let people scan the QR code.</p>
+        <div class="result">
+          <div class="qrbox" id="resultQr"></div>
+          <div>
+            <div class="linkrow">
+              <input id="shareLink" readonly aria-label="Card link">
+              <button class="btn" type="button" id="copyBtn">Copy</button>
+            </div>
+            <div class="btnrow">
+              <a class="btn" id="openLink" target="_blank" rel="noopener">Open card</a>
+              <button class="btn" type="button" id="dlPng">QR as PNG</button>
+              <button class="btn" type="button" id="dlSvg">QR as SVG (print)</button>
+            </div>
+            <div class="note warn" id="fileWarn" hidden>
+              <b>You’re viewing this file locally.</b>
+              Links and QR codes made here point to your computer and won’t work for others. Publish the site first (see README), then create your card from the published address.
+            </div>
+          </div>
+        </div>
+        <div class="note">
+          <b>Want a QR code that never changes? (recommended for printed cards)</b>
+          The QR above contains your details in the link, so editing your info later gives you a new QR code. For a permanent one:
+          <ol>
+            <li><button class="btn" type="button" id="dlJson" style="padding:6px 10px;font-size:13px">Download card.json</button></li>
+            <li>Upload <code>card.json</code> next to <code>index.html</code> on your site.</li>
+            <li>Print this QR, which points to your site’s main address:
+              <div class="btnrow"><button class="btn" type="button" id="dlPermPng">Permanent QR (PNG)</button><button class="btn" type="button" id="dlPermSvg">Permanent QR (SVG)</button></div>
+            </li>
+          </ol>
+          <div style="margin-top:8px">To update your details later, replace <code>card.json</code>. The printed QR stays valid.</div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="preview-col">
+      <p class="tag">Live preview</p>
+      <div id="previewCard"></div>
+    </aside>
+  </div>
+</main>
+
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-inner">
+    <h3 id="modalTitle"></h3>
+    <p>Scan with your phone camera</p>
+    <div class="qrbox" id="modalQr"></div>
+    <button class="btn btn-block" type="button" id="modalClose">Close</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ---------------- Data model ---------------- */
+const FIELDS = [
+  ["firstName", "f"], ["lastName", "l"], ["jobTitle", "j"], ["company", "c"],
+  ["phone", "p"], ["email", "e"], ["address", "a"], ["website", "w"],
+  ["linkedin", "li"], ["twitter", "x"], ["instagram", "ig"], ["facebook", "fb"],
+  ["theme", "t"]
+];
+
+const THEMES = {
+  indigo:  ["#4f46e5", "#7c3aed"],
+  ocean:   ["#0369a1", "#0891b2"],
+  emerald: ["#047857", "#0d9488"],
+  sunset:  ["#e11d48", "#f97316"],
+  gold:    ["#b45309", "#d97706"],
+  slate:   ["#1f2937", "#475569"]
+};
+
+function clean(d) {
+  const out = {};
+  if (!d || typeof d !== "object") return out;
+  for (const [k] of FIELDS) {
+    const v = d[k];
+    if (typeof v === "string" && v.trim()) out[k] = v.trim().slice(0, 500);
+  }
+  if (out.theme && !THEMES[out.theme]) delete out.theme;
+  return out;
+}
+
+/* ---------------- URL encoding (base64url JSON) ---------------- */
+function encode(d) {
+  const short = {};
+  for (const [k, s] of FIELDS) if (d[k]) short[s] = d[k];
+  const bytes = new TextEncoder().encode(JSON.stringify(short));
+  let bin = "";
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function decode(str) {
+  try {
+    let s = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    const bytes = Uint8Array.from(atob(s), c => c.charCodeAt(0));
+    const short = JSON.parse(new TextDecoder().decode(bytes));
+    const d = {};
+    for (const [k, sk] of FIELDS) if (short[sk] != null) d[k] = String(short[sk]);
+    return clean(d);
+  } catch { return null; }
+}
+
+/* ---------------- Link helpers ---------------- */
+function safeUrl(v) {
+  v = (v || "").trim();
+  if (!v) return null;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(v) && !/^https?:\/\//i.test(v)) return null; // block javascript: etc.
+  if (!/^https?:\/\//i.test(v)) v = "https://" + v.replace(/^\/+/, "");
+  try { return new URL(v).href; } catch { return null; }
+}
+function socialUrl(v, domainRe, base) {
+  v = (v || "").trim();
+  if (!v) return null;
+  if (domainRe.test(v)) return safeUrl(v);
+  const handle = v.replace(/^@/, "").replace(/^\/+|\/+$/g, "");
+  if (!/^[\w.\-\/]+$/.test(handle)) return safeUrl(v);
+  return base + handle;
+}
+const links = {
+  website:   v => safeUrl(v),
+  linkedin:  v => socialUrl(v, /linkedin\.com/i, "https://www.linkedin.com/in/"),
+  twitter:   v => socialUrl(v, /(twitter|x)\.com/i, "https://x.com/"),
+  instagram: v => socialUrl(v, /instagram\.com/i, "https://www.instagram.com/"),
+  facebook:  v => socialUrl(v, /(facebook|fb)\.com/i, "https://www.facebook.com/")
+};
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+function fullName(d) { return [d.firstName, d.lastName].filter(Boolean).join(" "); }
+function initials(d) {
+  const src = (d.firstName || d.lastName) ? [d.firstName, d.lastName] : [d.company];
+  return src.filter(Boolean).map(s => [...s.trim()][0] || "").join("").toUpperCase().slice(0, 2) || "?";
+}
+function prettyUrl(u) { return u.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, ""); }
+
+/* ---------------- Icons ---------------- */
+const I = {
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>',
+  email: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>',
+  web:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+  pin:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  linkedin:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.75h4v11.25H3zM9.5 9.75h3.8v1.6h.06c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1V21h-4v-5c0-1.2-.02-2.73-1.66-2.73-1.67 0-1.92 1.3-1.92 2.64V21h-4z"/></svg>',
+  twitter:   '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.33l4.37 5.77zm-1.08 16.2h1.7L7.4 4.73H5.58z"/></svg>',
+  instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.6" cy="6.4" r=".6" fill="currentColor"/></svg>',
+  facebook:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 22v-8.2h2.75l.42-3.2H13.5V8.56c0-.93.26-1.56 1.6-1.56h1.7V4.14A22.6 22.6 0 0 0 14.3 4c-2.46 0-4.15 1.5-4.15 4.26v2.35H7.4v3.2h2.75V22z"/></svg>',
+  save:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4M12 2v13"/></svg>',
+  qr:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>'
+};
+
+/* ---------------- DOM helper ---------------- */
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "html") el.innerHTML = v; // only used with trusted icon strings
+    else if (k === "style") el.style.cssText = v;
+    else el.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid);
+  return el;
+}
+
+/* ---------------- Card rendering ---------------- */
+function renderCard(d) {
+  const [a1, a2] = THEMES[d.theme] || THEMES.indigo;
+  const card = h("article", { class: "card", style: `--accent:${a1};--accent-2:${a2}` });
+
+  const name = fullName(d);
+  card.append(h("div", { class: "card-head" },
+    h("div", { class: "card-company" }, d.company || "\u00a0")
+  ));
+
+  const body = h("div", { class: "card-body" });
+  body.append(h("div", { class: "avatar", "aria-hidden": "true" }, h("span", {}, initials(d))));
+  body.append(h("h1", { class: "card-name" }, name || d.company || "Your Name"));
+  if (d.jobTitle || (d.company && name)) {
+    body.append(h("p", { class: "card-title" },
+      d.jobTitle || "",
+      d.jobTitle && d.company && name ? " · " : "",
+      d.company && name ? h("b", {}, d.company) : ""
+    ));
+  }
+
+  const rows = h("ul", { class: "rows" });
+  const row = (icon, label, value, href, external) => rows.append(h("li", { class: "row" },
+    h("a", { href, target: external ? "_blank" : null, rel: external ? "noopener" : null },
+      h("span", { class: "ic", html: I[icon] }),
+      h("span", { class: "txt" }, h("span", { class: "lbl" }, label), h("span", { class: "val" }, value))
+    )));
+  if (d.phone) row("phone", "Phone", d.phone, "tel:" + d.phone.replace(/[^\d+*#,;]/g, ""));
+  if (d.email) row("email", "Email", d.email, "mailto:" + d.email);
+  const web = links.website(d.website);
+  if (web) row("web", "Website", prettyUrl(web), web, true);
+  if (d.address) {
+    const q = encodeURIComponent(d.address.replace(/\s*\n\s*/g, ", "));
+    row("pin", "Office", d.address.replace(/\s*\n\s*/g, ", "),
+      isIOS ? "https://maps.apple.com/?q=" + q : "https://www.google.com/maps/search/?api=1&query=" + q, true);
+  }
+  if (rows.children.length) body.append(rows);
+
+  const socials = h("div", { class: "socials" });
+  for (const [k, label] of [["linkedin", "LinkedIn"], ["twitter", "X (Twitter)"], ["instagram", "Instagram"], ["facebook", "Facebook"]]) {
+    const u = links[k](d[k]);
+    if (u) socials.append(h("a", { href: u, target: "_blank", rel: "noopener", "aria-label": label, title: label, html: I[k] }));
+  }
+  if (socials.children.length) body.append(socials);
+
+  if (!rows.children.length && !socials.children.length && !name && !d.company) {
+    body.append(h("p", { class: "empty-hint" }, "Start typing to see your card here."));
+  }
+  card.append(body);
+  return card;
+}
+
+/* ---------------- vCard ---------------- */
+function vEsc(s) { return String(s).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;"); }
+function buildVcf(d) {
+  const L = ["BEGIN:VCARD", "VERSION:3.0"];
+  L.push(`N:${vEsc(d.lastName || "")};${vEsc(d.firstName || "")};;;`);
+  L.push(`FN:${vEsc(fullName(d) || d.company || "Contact")}`);
+  if (d.company) L.push(`ORG:${vEsc(d.company)}`);
+  if (d.jobTitle) L.push(`TITLE:${vEsc(d.jobTitle)}`);
+  if (d.phone) L.push(`TEL;TYPE=CELL,VOICE:${vEsc(d.phone)}`);
+  if (d.email) L.push(`EMAIL;TYPE=INTERNET,WORK:${vEsc(d.email)}`);
+  if (d.address) L.push(`ADR;TYPE=WORK:;;${vEsc(d.address.replace(/\s*\n\s*/g, ", "))};;;;`);
+  const web = links.website(d.website);
+  if (web) L.push(`URL;TYPE=WORK:${web}`);
+  let n = 1;
+  for (const [k, label] of [["linkedin", "LinkedIn"], ["twitter", "X"], ["instagram", "Instagram"], ["facebook", "Facebook"]]) {
+    const u = links[k](d[k]);
+    if (!u) continue;
+    L.push(`item${n}.URL:${u}`, `item${n}.X-ABLabel:${label}`);
+    L.push(`X-SOCIALPROFILE;TYPE=${label.toLowerCase()}:${u}`);
+    n++;
+  }
+  L.push("END:VCARD");
+  return L.join("\r\n") + "\r\n";
+}
+function fileSlug(d) {
+  return (fullName(d) || d.company || "contact").replace(/[^\p{L}\p{N} _-]+/gu, "").trim().replace(/\s+/g, "_") || "contact";
+}
+function saveContact(d) {
+  const vcf = buildVcf(d);
+  if (isIOS) {
+    // iOS Safari/Chrome open a data: vCard directly in the "Create New Contact" sheet.
+    window.location.href = "data:text/vcard;charset=utf-8," + encodeURIComponent(vcf);
+    return;
+  }
+  // Android & desktop: download the .vcf; Android opens it straight in Contacts.
+  download(new Blob([vcf], { type: "text/vcard;charset=utf-8" }), fileSlug(d) + ".vcf");
+}
+
+/* ---------------- QR ---------------- */
+function makeQr(text) {
+  const qr = qrcode(0, text.length > 1200 ? "L" : "M");
+  qr.addData(text);
+  qr.make();
+  return qr;
+}
+function qrSvg(text, margin = 4) {
+  const qr = makeQr(text), n = qr.getModuleCount(), size = n + margin * 2;
+  let p = "";
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) p += `M${c + margin} ${r + margin}h1v1h-1z`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="${size}" height="${size}" fill="#fff"/><path d="${p}" fill="#000"/></svg>`;
+}
+function qrPngBlob(text, px = 1200) {
+  const qr = makeQr(text), n = qr.getModuleCount(), margin = 4, size = n + margin * 2;
+  const scale = Math.max(1, Math.floor(px / size));
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size * scale;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#000";
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect((c + margin) * scale, (r + margin) * scale, scale, scale);
+  return new Promise(res => canvas.toBlob(res, "image/png"));
+}
+
+/* ---------------- Misc helpers ---------------- */
+function download(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = h("a", { href: url, download: name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = h("textarea", { style: "position:fixed;opacity:0" }); ta.value = text;
+    document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  toast("Link copied");
+}
+function siteRoot() { return location.origin + location.pathname; }
+async function loadCardFile() {
+  if (location.protocol === "file:") return null;
+  try {
+    const r = await fetch("card.json", { cache: "no-cache" });
+    if (!r.ok) return null;
+    const d = clean(await r.json());
+    return Object.keys(d).length ? d : null;
+  } catch { return null; }
+}
+function setTheme(d) {
+  const [a1, a2] = THEMES[d.theme] || THEMES.indigo;
+  document.documentElement.style.setProperty("--accent", a1);
+  document.documentElement.style.setProperty("--accent-2", a2);
+  document.querySelector('meta[name="theme-color"]').content = a1;
+}
+
+/* ---------------- Modal ---------------- */
+const modal = document.getElementById("modal");
+function openQr(title, url) {
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalQr").innerHTML = qrSvg(url);
+  modal.hidden = false;
+}
+document.getElementById("modalClose").onclick = () => modal.hidden = true;
+modal.addEventListener("click", e => { if (e.target === modal) modal.hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") modal.hidden = true; });
+
+/* ---------------- Card view ---------------- */
+function showCard(d, url) {
+  document.getElementById("builder").hidden = true;
+  const view = document.getElementById("view");
+  view.hidden = false;
+  setTheme(d);
+  const name = fullName(d) || d.company || "Contact";
+  document.title = name + (d.jobTitle ? " · " + d.jobTitle : "") + (d.company && fullName(d) ? " · " + d.company : "");
+  const holder = document.getElementById("viewCard");
+  holder.replaceChildren(renderCard(d));
+  holder.style.cssText = "width:100%;display:flex;justify-content:center";
+
+  const save = document.getElementById("saveBtn");
+  save.innerHTML = I.save; save.append(" Add to Contacts");
+  save.onclick = () => saveContact(d);
+
+  const share = document.getElementById("shareBtn");
+  share.innerHTML = I.share; share.append(" Share");
+  share.onclick = async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: name, text: `${name}'s business card`, url }); } catch {}
+    } else copy(url);
+  };
+
+  const qrB = document.getElementById("qrBtn");
+  qrB.innerHTML = I.qr; qrB.append(" QR code");
+  qrB.onclick = () => openQr(name, url);
+}
+
+/* ---------------- Builder ---------------- */
+const form = document.getElementById("form");
+let currentTheme = "indigo";
+
+function formData() {
+  const d = {};
+  for (const [k] of FIELDS) if (k !== "theme") d[k] = form.elements[k].value;
+  d.theme = currentTheme;
+  return clean(d);
+}
+function fillForm(d) {
+  for (const [k] of FIELDS) if (k !== "theme") form.elements[k].value = d[k] || "";
+  selectTheme(d.theme || "indigo");
+}
+function selectTheme(name) {
+  currentTheme = name;
+  for (const b of document.querySelectorAll(".swatch")) b.setAttribute("aria-pressed", String(b.dataset.theme === name));
+  setTheme({ theme: name });
+}
+function updatePreview() {
+  document.getElementById("previewCard").replaceChildren(renderCard(formData()));
+  document.getElementById("result").hidden = true;
+}
+
+function setupBuilder() {
+  const sw = document.getElementById("swatches");
+  for (const [name, [a1, a2]] of Object.entries(THEMES)) {
+    const b = h("button", { type: "button", class: "swatch", "data-theme": name, "aria-label": name + " color", title: name,
+      style: `background:linear-gradient(135deg,${a1},${a2})` });
+    b.onclick = () => { selectTheme(name); updatePreview(); };
+    sw.append(b);
+  }
+  const cb = document.getElementById("createBtn");
+  cb.innerHTML = I.spark; cb.append(" Create my card");
+
+  form.addEventListener("input", updatePreview);
+  document.getElementById("resetBtn").onclick = () => { form.reset(); selectTheme("indigo"); updatePreview(); form.elements.firstName.focus(); };
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const first = form.elements.firstName, email = form.elements.email;
+    if (!first.value.trim()) { first.focus(); toast("Please enter your first name"); return; }
+    if (email.value.trim() && !email.checkValidity()) { email.focus(); toast("Please check the email address"); return; }
+    const d = formData();
+    const url = siteRoot() + "#c=" + encode(d);
+    showResult(d, url);
+  });
+}
+
+function showResult(d, url) {
+  const res = document.getElementById("result");
+  res.hidden = false;
+  document.getElementById("resultQr").innerHTML = qrSvg(url);
+  document.getElementById("shareLink").value = url;
+  document.getElementById("openLink").href = url;
+  document.getElementById("fileWarn").hidden = location.protocol !== "file:";
+  const slug = fileSlug(d);
+  document.getElementById("copyBtn").onclick = () => copy(url);
+  document.getElementById("dlPng").onclick = async () => download(await qrPngBlob(url), slug + "_qr.png");
+  document.getElementById("dlSvg").onclick = () => download(new Blob([qrSvg(url)], { type: "image/svg+xml" }), slug + "_qr.svg");
+  document.getElementById("dlJson").onclick = () => download(new Blob([JSON.stringify(d, null, 2) + "\n"], { type: "application/json" }), "card.json");
+  const root = siteRoot();
+  document.getElementById("dlPermPng").onclick = async () => download(await qrPngBlob(root), slug + "_permanent_qr.png");
+  document.getElementById("dlPermSvg").onclick = () => download(new Blob([qrSvg(root)], { type: "image/svg+xml" }), slug + "_permanent_qr.svg");
+  res.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showBuilder(prefill) {
+  document.getElementById("view").hidden = true;
+  document.getElementById("builder").hidden = false;
+  document.title = "Create your digital business card";
+  fillForm(prefill || {});
+  updatePreview();
+}
+
+/* ---------------- Router ---------------- */
+async function route() {
+  modal.hidden = true;
+  const params = new URLSearchParams(location.hash.slice(1));
+  if (params.has("edit")) {
+    const fromLink = params.get("c") ? decode(params.get("c")) : null;
+    return showBuilder(fromLink || await loadCardFile());
+  }
+  if (params.get("c")) {
+    const d = decode(params.get("c"));
+    if (d && Object.keys(d).length) return showCard(d, location.href);
+  }
+  const fileCard = await loadCardFile();
+  if (fileCard) return showCard(fileCard, siteRoot());
+  showBuilder();
+}
+
+setupBuilder();
+window.addEventListener("hashchange", route);
+route();
+})();
+</script>
+</body>
+</html>
