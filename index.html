@@ -384,13 +384,13 @@ button { font: inherit; cursor: pointer; }
           <b>Want a QR code that never changes? (recommended for printed cards)</b>
           The QR above contains your details in the link, so editing your info later gives you a new QR code. For a permanent one:
           <ol>
-            <li><button class="btn" type="button" id="dlJson" style="padding:6px 10px;font-size:13px">Download card.json</button></li>
-            <li>Upload <code>card.json</code> next to <code>index.html</code> on your site.</li>
+            <li><button class="btn" type="button" id="dlJson" style="padding:6px 10px;font-size:13px">Download card.json + contact.vcf</button></li>
+            <li>Upload <b>both</b> files next to <code>index.html</code> on your site. <code>contact.vcf</code> makes <b>Add to Contacts</b> work in every phone browser.</li>
             <li>Print this QR, which points to your site’s main address:
               <div class="btnrow"><button class="btn" type="button" id="dlPermPng">Permanent QR (PNG)</button><button class="btn" type="button" id="dlPermSvg">Permanent QR (SVG)</button></div>
             </li>
           </ol>
-          <div style="margin-top:8px">To update your details later, replace <code>card.json</code>. The printed QR stays valid.</div>
+          <div style="margin-top:8px">To update your details later, replace both files. The printed QR stays valid.</div>
         </div>
       </section>
     </div>
@@ -695,15 +695,31 @@ async function photoForVcard(src) {
 }
 
 let vcardPhoto = null;
+let staticVcfUrl = null; // a real contact.vcf hosted next to card.json, when present
+// Only real Safari can open data: URLs. Chrome/Firefox/Edge on iOS and in-app browsers block them.
+const isIOSSafari = isIOS && /Safari/.test(navigator.userAgent) &&
+  !/CriOS|FxiOS|EdgiOS|OPiOS|GSA|YaBrowser|DuckDuckGo|FBAN|FBAV|Instagram|LinkedInApp|Line\/|Twitter|Snapchat/.test(navigator.userAgent);
+
 function saveContact(d) {
+  // 1. A hosted .vcf file is a normal https link, which every browser (including in-app ones) opens in Contacts.
+  if (staticVcfUrl) { window.location.href = staticVcfUrl; return; }
   const vcf = buildVcf(d, vcardPhoto);
-  if (isIOS) {
-    // iOS Safari/Chrome open a data: vCard directly in the "Create New Contact" sheet.
+  // 2. iOS Safari shows the "Create New Contact" sheet for a data: vCard.
+  if (isIOSSafari) {
     window.location.href = "data:text/vcard;charset=utf-8," + encodeURIComponent(vcf);
     return;
   }
-  // Android & desktop: download the .vcf; Android opens it straight in Contacts.
+  // 3. Everyone else (Android, desktop, Chrome on iOS): download the .vcf, which opens in Contacts.
   download(new Blob([vcf], { type: "text/vcard;charset=utf-8" }), fileSlug(d) + ".vcf");
+}
+// Use the hosted contact.vcf only if it belongs to this card (guards against a stale file).
+function findStaticVcf(d) {
+  staticVcfUrl = null;
+  const fn = "FN:" + vEsc(fullName(d) || d.company || "Contact");
+  fetch("contact.vcf", { cache: "no-cache" })
+    .then(r => r.ok ? r.text() : "")
+    .then(t => { if (t.includes("BEGIN:VCARD") && t.split(/\r?\n/).includes(fn)) staticVcfUrl = new URL("contact.vcf", location.href).href; })
+    .catch(() => {});
 }
 
 /* ---------------- QR ---------------- */
@@ -781,7 +797,7 @@ modal.addEventListener("click", e => { if (e.target === modal) modal.hidden = tr
 document.addEventListener("keydown", e => { if (e.key === "Escape") modal.hidden = true; });
 
 /* ---------------- Card view ---------------- */
-function showCard(d, url) {
+function showCard(d, url, fromFile) {
   document.getElementById("builder").hidden = true;
   const view = document.getElementById("view");
   view.hidden = false;
@@ -794,6 +810,7 @@ function showCard(d, url) {
 
   vcardPhoto = null;
   photoForVcard(d.photo).then(p => vcardPhoto = p); // ready long before anyone taps "Add to Contacts"
+  if (fromFile) findStaticVcf(d); else staticVcfUrl = null;
 
   const save = document.getElementById("saveBtn");
   save.innerHTML = I.save; save.append(" Add to Contacts");
@@ -911,7 +928,11 @@ function showResult(d, url) {
   document.getElementById("copyBtn").onclick = () => copy(url);
   document.getElementById("dlPng").onclick = async () => download(await qrPngBlob(url), slug + "_qr.png");
   document.getElementById("dlSvg").onclick = () => download(new Blob([qrSvg(url)], { type: "image/svg+xml" }), slug + "_qr.svg");
-  document.getElementById("dlJson").onclick = () => download(new Blob([JSON.stringify(d, null, 2) + "\n"], { type: "application/json" }), "card.json");
+  document.getElementById("dlJson").onclick = async () => {
+    download(new Blob([JSON.stringify(d, null, 2) + "\n"], { type: "application/json" }), "card.json");
+    const vcf = buildVcf(d, await photoForVcard(d.photo));
+    setTimeout(() => download(new Blob([vcf], { type: "text/vcard;charset=utf-8" }), "contact.vcf"), 400);
+  };
   const root = siteRoot();
   document.getElementById("dlPermPng").onclick = async () => download(await qrPngBlob(root), slug + "_permanent_qr.png");
   document.getElementById("dlPermSvg").onclick = () => download(new Blob([qrSvg(root)], { type: "image/svg+xml" }), slug + "_permanent_qr.svg");
@@ -939,7 +960,7 @@ async function route() {
     if (d && Object.keys(d).length) return showCard(d, location.href);
   }
   const fileCard = await loadCardFile();
-  if (fileCard) return showCard(fileCard, siteRoot());
+  if (fileCard) return showCard(fileCard, siteRoot(), true);
   showBuilder();
 }
 

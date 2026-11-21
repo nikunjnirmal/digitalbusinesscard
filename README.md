@@ -10,8 +10,8 @@ A single-page web app for making a digital business card. It runs as a static si
 - **The card shows only the fields you fill in.**
 - **Share it** with a link (the native share sheet on phones) or a QR code, and use the **QR code** button on the card to show it full screen to someone.
 - **One-tap Add to Contacts**: the page builds a vCard (`.vcf`) with all the details and social profiles.
-  - iOS (Safari or Chrome) opens the "Create New Contact" sheet directly.
-  - Android downloads the `.vcf` file. Tap the download notification to open it in Contacts.
+  - **With `contact.vcf` hosted next to `card.json` (recommended):** the button opens that file. This works in every phone browser, including Chrome on iPhone and the browsers built into apps like LinkedIn and Instagram.
+  - **Without it:** iPhone Safari opens the "Create New Contact" sheet directly. Chrome on iPhone and Android download the `.vcf` file; open the download to add it to Contacts.
 - **Permanent QR code** for printing (see below). You can download it as PNG, or as SVG for sharp print output.
 - Everything happens in the browser and nothing gets uploaded.
 
@@ -22,11 +22,12 @@ A single-page web app for making a digital business card. It runs as a static si
 | `index.html` | The whole app (builder and card view) |
 | `qrcode.min.js` | QR code library ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator), MIT). It's stored locally so the site doesn't depend on a CDN. |
 | `card.json` | *(you add this)* Your card details for the permanent link |
+| `contact.vcf` | *(you add this)* The contact file behind **Add to Contacts**. The builder downloads it together with `card.json`. It's only used if its name matches `card.json`, so an outdated copy is ignored. |
 
 ## Two ways to share
 
 1. **Self-contained link** (`https://your-site/#c=...`): your details are encoded in the link, so anyone can make a card without touching the hosting. Editing your details gives you a new link and a new QR code.
-2. **Permanent link** (`https://your-site/`), which is **the option to use for printed cards**. Put a `card.json` next to `index.html`, and the site's main address then always shows your card. When your details change, replace `card.json`. The printed QR code points to the main address, so it never changes.
+2. **Permanent link** (`https://your-site/`), which is **the option to use for printed cards**. Put a `card.json` next to `index.html`, and the site's main address then always shows your card. Add `contact.vcf` alongside it. When your details change, replace both files. The printed QR code points to the main address, so it never changes.
 
 ## Host it for free on GitHub Pages (about 5 minutes)
 
@@ -37,9 +38,9 @@ A single-page web app for making a digital business card. It runs as a static si
 5. After about a minute your site is live at `https://<your-username>.github.io/card/`.
 6. Open that address. The builder appears because no `card.json` exists yet. Fill in your details and click **Create my card**.
 7. For a permanent QR code:
-   - Click **Download card.json** and upload it to the same repository.
+   - Click **Download card.json + contact.vcf**. This saves two files; if your browser asks whether to allow multiple downloads, choose Allow. Upload both files to the same repository.
    - Click **Permanent QR (SVG)** or **(PNG)** and give that file to your printer.
-   - Your address `https://<your-username>.github.io/card/` now shows your card. To change your details later, open `…/card/#edit`, update the form, download a new `card.json`, and upload it over the old one. The printed QR keeps working.
+   - Your address `https://<your-username>.github.io/card/` now shows your card. To change your details later, open `…/card/#edit`, update the form, download new `card.json` and `contact.vcf` files, and upload them over the old ones. The printed QR keeps working.
 
 **Other free hosts:** [Netlify Drop](https://app.netlify.com/drop) (drag the folder onto the page) or [Cloudflare Pages](https://pages.cloudflare.com/) work the same way.
 
