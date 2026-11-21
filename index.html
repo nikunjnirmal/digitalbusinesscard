@@ -93,6 +93,7 @@ button { font: inherit; cursor: pointer; }
   display: grid; place-items: center;
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
 }
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
 .card-body { padding: 56px 24px 24px; position: relative; }
 .card-name { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; word-break: break-word; }
 .card-title { margin: 4px 0 0; color: var(--muted); font-size: 15px; font-weight: 500; }
@@ -202,6 +203,15 @@ button { font: inherit; cursor: pointer; }
 .field input:invalid:not(:placeholder-shown) { border-color: #e11d48; }
 .section-label { grid-column: 1 / -1; margin: 10px 0 -4px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 
+.photo-pick { display: flex; gap: 16px; align-items: center; }
+.photo-thumb {
+  flex: none; width: 72px; height: 72px; border-radius: 50%;
+  display: grid; place-items: center; overflow: hidden;
+  background: var(--surface-2); border: 1px dashed var(--border); color: var(--muted);
+}
+.photo-thumb svg { width: 28px; height: 28px; }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.hint { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
 .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
 .swatch { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--surface); outline: 2px solid transparent; padding: 0; }
 .swatch[aria-pressed="true"] { outline-color: var(--text); }
@@ -281,6 +291,20 @@ button { font: inherit; cursor: pointer; }
         <p class="sub">Everything stays in your browser — nothing is uploaded.</p>
         <div class="fields">
           <div class="section-label">About you</div>
+          <div class="field full">
+            <label for="photoBtn">Profile photo</label>
+            <div class="photo-pick">
+              <div class="photo-thumb" id="photoThumb"></div>
+              <div>
+                <div class="btnrow" style="margin-top:0">
+                  <button class="btn" type="button" id="photoBtn">Upload photo</button>
+                  <button class="btn" type="button" id="photoRemove" hidden>Remove</button>
+                </div>
+                <input id="photoInput" type="file" accept="image/*" hidden>
+                <p class="hint">The photo is cropped to a square and resized in your browser. It's saved in <b>card.json</b>, so it appears on your permanent link and on saved contacts. Share links can't include pictures.</p>
+              </div>
+            </div>
+          </div>
           <div class="field"><label for="firstName">First name <span class="req">*</span></label><input id="firstName" name="firstName" autocomplete="given-name" placeholder="Jane" required></div>
           <div class="field"><label for="lastName">Last name</label><input id="lastName" name="lastName" autocomplete="family-name" placeholder="Doe"></div>
           <div class="field"><label for="jobTitle">Job title</label><input id="jobTitle" name="jobTitle" autocomplete="organization-title" placeholder="Head of Product"></div>
@@ -327,6 +351,10 @@ button { font: inherit; cursor: pointer; }
               Links and QR codes made here point to your computer and won’t work for others. Publish the site first (see README), then create your card from the published address.
             </div>
           </div>
+        </div>
+        <div class="note warn" id="photoNote" hidden>
+          <b>Your photo isn't in the link above.</b>
+          Links and QR codes can't hold pictures. To show your photo, use the permanent option below. Your photo is saved inside <code>card.json</code>.
         </div>
         <div class="note">
           <b>Want a QR code that never changes? (recommended for printed cards)</b>
@@ -390,7 +418,16 @@ function clean(d) {
     if (typeof v === "string" && v.trim()) out[k] = v.trim().slice(0, 500);
   }
   if (out.theme && !THEMES[out.theme]) delete out.theme;
+  if (validPhoto(d.photo)) out.photo = d.photo.trim();
   return out;
+}
+// Photo: an embedded image data URL (from upload) or an http(s)/relative image path in card.json.
+function validPhoto(p) {
+  if (typeof p !== "string") return false;
+  p = p.trim();
+  if (p.startsWith("data:")) return p.length < 1500000 && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(p);
+  if (p.length > 2000 || /[\s"'<>]/.test(p)) return false;
+  return /^https?:\/\//i.test(p) || !/^[a-z][a-z0-9+.-]*:/i.test(p);
 }
 
 /* ---------------- URL encoding (base64url JSON) ---------------- */
@@ -460,6 +497,7 @@ const I = {
   save:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4M12 2v13"/></svg>',
   qr:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>',
+  camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>'
 };
 
@@ -487,7 +525,14 @@ function renderCard(d) {
   ));
 
   const body = h("div", { class: "card-body" });
-  body.append(h("div", { class: "avatar", "aria-hidden": "true" }, h("span", {}, initials(d))));
+  const avatar = h("div", { class: "avatar", "aria-hidden": "true" });
+  const initialsEl = h("span", {}, initials(d));
+  if (d.photo) {
+    const img = h("img", { src: d.photo, alt: "" });
+    img.onerror = () => img.replaceWith(initialsEl); // fall back to initials if the image can't load
+    avatar.append(img);
+  } else avatar.append(initialsEl);
+  body.append(avatar);
   body.append(h("h1", { class: "card-name" }, name || d.company || "Your Name"));
   if (d.jobTitle || (d.company && name)) {
     body.append(h("p", { class: "card-title" },
@@ -530,7 +575,14 @@ function renderCard(d) {
 
 /* ---------------- vCard ---------------- */
 function vEsc(s) { return String(s).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;"); }
-function buildVcf(d) {
+// vCard lines must be folded at 75 chars; continuation lines start with a space.
+function fold(line) {
+  if (line.length <= 75) return line;
+  const parts = [line.slice(0, 75)];
+  for (let i = 75; i < line.length; i += 74) parts.push(" " + line.slice(i, i + 74));
+  return parts.join("\r\n");
+}
+function buildVcf(d, photoJpeg) {
   const L = ["BEGIN:VCARD", "VERSION:3.0"];
   L.push(`N:${vEsc(d.lastName || "")};${vEsc(d.firstName || "")};;;`);
   L.push(`FN:${vEsc(fullName(d) || d.company || "Contact")}`);
@@ -549,14 +601,45 @@ function buildVcf(d) {
     L.push(`X-SOCIALPROFILE;TYPE=${label.toLowerCase()}:${u}`);
     n++;
   }
+  if (photoJpeg) L.push(fold("PHOTO;ENCODING=b;TYPE=JPEG:" + photoJpeg.split(",")[1]));
   L.push("END:VCARD");
   return L.join("\r\n") + "\r\n";
 }
 function fileSlug(d) {
   return (fullName(d) || d.company || "contact").replace(/[^\p{L}\p{N} _-]+/gu, "").trim().replace(/\s+/g, "_") || "contact";
 }
+/* ---------------- Photo processing ---------------- */
+function loadImg(src, cors) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    if (cors) img.crossOrigin = "anonymous";
+    img.onload = () => res(img); img.onerror = rej; img.src = src;
+  });
+}
+// Center-crop to a square, scale down, and re-encode as JPEG to keep card.json and vCards small.
+function squareJpeg(img, max = 360, quality = 0.82) {
+  const s = Math.min(img.naturalWidth, img.naturalHeight);
+  const size = Math.min(max, s);
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, size, size);
+  ctx.drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, size, size);
+  return c.toDataURL("image/jpeg", quality);
+}
+async function processUpload(file) {
+  const url = URL.createObjectURL(file);
+  try { return squareJpeg(await loadImg(url)); } finally { URL.revokeObjectURL(url); }
+}
+async function photoForVcard(src) {
+  if (!src) return null;
+  if (/^data:image\/jpeg;base64,/.test(src)) return src;
+  try { return squareJpeg(await loadImg(src, true)); } catch { return null; } // e.g. cross-origin image without CORS
+}
+
+let vcardPhoto = null;
 function saveContact(d) {
-  const vcf = buildVcf(d);
+  const vcf = buildVcf(d, vcardPhoto);
   if (isIOS) {
     // iOS Safari/Chrome open a data: vCard directly in the "Create New Contact" sheet.
     window.location.href = "data:text/vcard;charset=utf-8," + encodeURIComponent(vcf);
@@ -652,6 +735,9 @@ function showCard(d, url) {
   holder.replaceChildren(renderCard(d));
   holder.style.cssText = "width:100%;display:flex;justify-content:center";
 
+  vcardPhoto = null;
+  photoForVcard(d.photo).then(p => vcardPhoto = p); // ready long before anyone taps "Add to Contacts"
+
   const save = document.getElementById("saveBtn");
   save.innerHTML = I.save; save.append(" Add to Contacts");
   save.onclick = () => saveContact(d);
@@ -672,16 +758,27 @@ function showCard(d, url) {
 /* ---------------- Builder ---------------- */
 const form = document.getElementById("form");
 let currentTheme = "indigo";
+let currentPhoto = null;
 
 function formData() {
   const d = {};
   for (const [k] of FIELDS) if (k !== "theme") d[k] = form.elements[k].value;
   d.theme = currentTheme;
+  d.photo = currentPhoto;
   return clean(d);
 }
 function fillForm(d) {
   for (const [k] of FIELDS) if (k !== "theme") form.elements[k].value = d[k] || "";
   selectTheme(d.theme || "indigo");
+  setPhoto(d.photo || null);
+}
+function setPhoto(p) {
+  currentPhoto = p;
+  const thumb = document.getElementById("photoThumb");
+  thumb.innerHTML = p ? "" : I.camera;
+  if (p) thumb.append(h("img", { src: p, alt: "Your photo" }));
+  document.getElementById("photoRemove").hidden = !p;
+  document.getElementById("photoBtn").textContent = p ? "Change photo" : "Upload photo";
 }
 function selectTheme(name) {
   currentTheme = name;
@@ -704,8 +801,20 @@ function setupBuilder() {
   const cb = document.getElementById("createBtn");
   cb.innerHTML = I.spark; cb.append(" Create my card");
 
-  form.addEventListener("input", updatePreview);
-  document.getElementById("resetBtn").onclick = () => { form.reset(); selectTheme("indigo"); updatePreview(); form.elements.firstName.focus(); };
+  const photoInput = document.getElementById("photoInput");
+  document.getElementById("photoBtn").onclick = () => photoInput.click();
+  photoInput.addEventListener("change", async () => {
+    const file = photoInput.files[0];
+    photoInput.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast("Please choose an image file"); return; }
+    try { setPhoto(await processUpload(file)); updatePreview(); }
+    catch { toast("Couldn't read that image. Try a JPG or PNG."); }
+  });
+  document.getElementById("photoRemove").onclick = () => { setPhoto(null); updatePreview(); };
+
+  form.addEventListener("input", e => { if (e.target !== photoInput) updatePreview(); });
+  document.getElementById("resetBtn").onclick = () => { form.reset(); selectTheme("indigo"); setPhoto(null); updatePreview(); form.elements.firstName.focus(); };
 
   form.addEventListener("submit", e => {
     e.preventDefault();
@@ -725,6 +834,7 @@ function showResult(d, url) {
   document.getElementById("shareLink").value = url;
   document.getElementById("openLink").href = url;
   document.getElementById("fileWarn").hidden = location.protocol !== "file:";
+  document.getElementById("photoNote").hidden = !d.photo;
   const slug = fileSlug(d);
   document.getElementById("copyBtn").onclick = () => copy(url);
   document.getElementById("dlPng").onclick = async () => download(await qrPngBlob(url), slug + "_qr.png");
