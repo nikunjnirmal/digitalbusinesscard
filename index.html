@@ -93,6 +93,13 @@ button { font: inherit; cursor: pointer; }
   display: grid; place-items: center;
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
 }
+.card-logo {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center;
+  background: #fff; border-radius: 12px; padding: 8px 12px;
+  box-shadow: 0 6px 16px -8px rgba(0,0,0,.4);
+}
+.card-logo img { display: block; max-height: 36px; max-width: 180px; object-fit: contain; }
 .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
 .card-body { padding: 56px 24px 24px; position: relative; }
 .card-name { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; word-break: break-word; }
@@ -211,6 +218,9 @@ button { font: inherit; cursor: pointer; }
 }
 .photo-thumb svg { width: 28px; height: 28px; }
 .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-thumb.logo-thumb { width: 120px; height: 64px; border-radius: 12px; padding: 6px; }
+.photo-thumb.logo-thumb:has(img) { background: #fff; border-style: solid; }
+.photo-thumb.logo-thumb img { object-fit: contain; }
 .hint { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
 .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
 .swatch { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--surface); outline: 2px solid transparent; padding: 0; }
@@ -309,6 +319,20 @@ button { font: inherit; cursor: pointer; }
           <div class="field"><label for="lastName">Last name</label><input id="lastName" name="lastName" autocomplete="family-name" placeholder="Doe"></div>
           <div class="field"><label for="jobTitle">Job title</label><input id="jobTitle" name="jobTitle" autocomplete="organization-title" placeholder="Head of Product"></div>
           <div class="field"><label for="company">Company name</label><input id="company" name="company" autocomplete="organization" placeholder="Acme Inc."></div>
+          <div class="field full">
+            <label for="logoBtn">Company logo</label>
+            <div class="photo-pick">
+              <div class="photo-thumb logo-thumb" id="logoThumb"></div>
+              <div>
+                <div class="btnrow" style="margin-top:0">
+                  <button class="btn" type="button" id="logoBtn">Upload logo</button>
+                  <button class="btn" type="button" id="logoRemove" hidden>Remove</button>
+                </div>
+                <input id="logoInput" type="file" accept="image/*" hidden>
+                <p class="hint">A PNG or SVG with a transparent background works best. The logo appears at the top of your card, and like your photo it's saved in <b>card.json</b>.</p>
+              </div>
+            </div>
+          </div>
 
           <div class="section-label">Contact</div>
           <div class="field"><label for="phone">Phone number</label><input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+1 555 123 4567"></div>
@@ -353,8 +377,8 @@ button { font: inherit; cursor: pointer; }
           </div>
         </div>
         <div class="note warn" id="photoNote" hidden>
-          <b>Your photo isn't in the link above.</b>
-          Links and QR codes can't hold pictures. To show your photo, use the permanent option below. Your photo is saved inside <code>card.json</code>.
+          <b>Your photo and logo aren't in the link above.</b>
+          Links and QR codes can't hold pictures. To show them, use the permanent option below. Your photo and logo are saved inside <code>card.json</code>.
         </div>
         <div class="note">
           <b>Want a QR code that never changes? (recommended for printed cards)</b>
@@ -418,14 +442,14 @@ function clean(d) {
     if (typeof v === "string" && v.trim()) out[k] = v.trim().slice(0, 500);
   }
   if (out.theme && !THEMES[out.theme]) delete out.theme;
-  if (validPhoto(d.photo)) out.photo = d.photo.trim();
+  for (const k of ["photo", "logo"]) if (validImage(d[k])) out[k] = d[k].trim();
   return out;
 }
-// Photo: an embedded image data URL (from upload) or an http(s)/relative image path in card.json.
-function validPhoto(p) {
+// Photo/logo: an embedded image data URL (from upload) or an http(s)/relative image path in card.json.
+function validImage(p) {
   if (typeof p !== "string") return false;
   p = p.trim();
-  if (p.startsWith("data:")) return p.length < 1500000 && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(p);
+  if (p.startsWith("data:")) return p.length < 1500000 && /^data:image\/(jpeg|png|webp|gif|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(p);
   if (p.length > 2000 || /[\s"'<>]/.test(p)) return false;
   return /^https?:\/\//i.test(p) || !/^[a-z][a-z0-9+.-]*:/i.test(p);
 }
@@ -497,6 +521,7 @@ const I = {
   save:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4M12 2v13"/></svg>',
   qr:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>',
+  building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/></svg>',
   camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>'
 };
@@ -515,13 +540,22 @@ function h(tag, attrs, ...kids) {
 }
 
 /* ---------------- Card rendering ---------------- */
+// Top of the card: company logo on a white chip (so any logo color reads), else the company name.
+function headBrand(d) {
+  const text = h("div", { class: "card-company" }, d.company || " ");
+  if (!d.logo) return text;
+  const img = h("img", { src: d.logo, alt: d.company ? d.company + " logo" : "Company logo" });
+  const chip = h("div", { class: "card-logo" }, img);
+  img.onerror = () => chip.replaceWith(text);
+  return chip;
+}
 function renderCard(d) {
   const [a1, a2] = THEMES[d.theme] || THEMES.indigo;
   const card = h("article", { class: "card", style: `--accent:${a1};--accent-2:${a2}` });
 
   const name = fullName(d);
   card.append(h("div", { class: "card-head" },
-    h("div", { class: "card-company" }, d.company || "\u00a0")
+    headBrand(d)
   ));
 
   const body = h("div", { class: "card-body" });
@@ -630,6 +664,29 @@ function squareJpeg(img, max = 360, quality = 0.82) {
 async function processUpload(file) {
   const url = URL.createObjectURL(file);
   try { return squareJpeg(await loadImg(url)); } finally { URL.revokeObjectURL(url); }
+}
+// Logos keep their shape and transparency: scale to fit 480x200 and save as PNG
+// (falling back to JPEG on white if the PNG would be unusually large).
+async function processLogo(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await loadImg(url);
+    const w0 = img.naturalWidth || 480, h0 = img.naturalHeight || 200; // SVGs without a size report 0
+    const fit = Math.min(480 / w0, 200 / h0);
+    const scale = file.type === "image/svg+xml" ? fit : Math.min(1, fit); // vectors can scale up, bitmaps only down
+    const w = Math.max(1, Math.round(w0 * scale)), hgt = Math.max(1, Math.round(h0 * scale));
+    const c = document.createElement("canvas");
+    c.width = w; c.height = hgt;
+    const ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0, w, hgt);
+    let out = c.toDataURL("image/png");
+    if (out.length > 250000) {
+      ctx.globalCompositeOperation = "destination-over";
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, hgt);
+      out = c.toDataURL("image/jpeg", 0.88);
+    }
+    return out;
+  } finally { URL.revokeObjectURL(url); }
 }
 async function photoForVcard(src) {
   if (!src) return null;
@@ -758,27 +815,47 @@ function showCard(d, url) {
 /* ---------------- Builder ---------------- */
 const form = document.getElementById("form");
 let currentTheme = "indigo";
-let currentPhoto = null;
+const IMAGE_KEYS = ["photo", "logo"];
+const pickers = {};
 
 function formData() {
   const d = {};
   for (const [k] of FIELDS) if (k !== "theme") d[k] = form.elements[k].value;
   d.theme = currentTheme;
-  d.photo = currentPhoto;
+  for (const k of IMAGE_KEYS) d[k] = pickers[k].value;
   return clean(d);
 }
 function fillForm(d) {
   for (const [k] of FIELDS) if (k !== "theme") form.elements[k].value = d[k] || "";
   selectTheme(d.theme || "indigo");
-  setPhoto(d.photo || null);
+  for (const k of IMAGE_KEYS) pickers[k].set(d[k] || null);
 }
-function setPhoto(p) {
-  currentPhoto = p;
-  const thumb = document.getElementById("photoThumb");
-  thumb.innerHTML = p ? "" : I.camera;
-  if (p) thumb.append(h("img", { src: p, alt: "Your photo" }));
-  document.getElementById("photoRemove").hidden = !p;
-  document.getElementById("photoBtn").textContent = p ? "Change photo" : "Upload photo";
+// Wires up an image upload control: <key>Thumb, <key>Btn, <key>Remove, <key>Input.
+function makePicker(key, word, icon, process) {
+  const $ = s => document.getElementById(key + s);
+  const thumb = $("Thumb"), btn = $("Btn"), rm = $("Remove"), input = $("Input");
+  const picker = {
+    value: null,
+    set(v) {
+      picker.value = v;
+      thumb.innerHTML = v ? "" : icon;
+      if (v) thumb.append(h("img", { src: v, alt: "Your " + word }));
+      rm.hidden = !v;
+      btn.textContent = (v ? "Change " : "Upload ") + word;
+    }
+  };
+  btn.onclick = () => input.click();
+  input.addEventListener("change", async () => {
+    const file = input.files[0];
+    input.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast("Please choose an image file"); return; }
+    try { picker.set(await process(file)); updatePreview(); }
+    catch { toast("Couldn't read that image. Try a JPG or PNG."); }
+  });
+  rm.onclick = () => { picker.set(null); updatePreview(); };
+  picker.set(null);
+  pickers[key] = picker;
 }
 function selectTheme(name) {
   currentTheme = name;
@@ -801,20 +878,15 @@ function setupBuilder() {
   const cb = document.getElementById("createBtn");
   cb.innerHTML = I.spark; cb.append(" Create my card");
 
-  const photoInput = document.getElementById("photoInput");
-  document.getElementById("photoBtn").onclick = () => photoInput.click();
-  photoInput.addEventListener("change", async () => {
-    const file = photoInput.files[0];
-    photoInput.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) { toast("Please choose an image file"); return; }
-    try { setPhoto(await processUpload(file)); updatePreview(); }
-    catch { toast("Couldn't read that image. Try a JPG or PNG."); }
-  });
-  document.getElementById("photoRemove").onclick = () => { setPhoto(null); updatePreview(); };
+  makePicker("photo", "photo", I.camera, processUpload);
+  makePicker("logo", "logo", I.building, processLogo);
 
-  form.addEventListener("input", e => { if (e.target !== photoInput) updatePreview(); });
-  document.getElementById("resetBtn").onclick = () => { form.reset(); selectTheme("indigo"); setPhoto(null); updatePreview(); form.elements.firstName.focus(); };
+  form.addEventListener("input", e => { if (e.target.type !== "file") updatePreview(); });
+  document.getElementById("resetBtn").onclick = () => {
+    form.reset(); selectTheme("indigo");
+    for (const k of IMAGE_KEYS) pickers[k].set(null);
+    updatePreview(); form.elements.firstName.focus();
+  };
 
   form.addEventListener("submit", e => {
     e.preventDefault();
@@ -834,7 +906,7 @@ function showResult(d, url) {
   document.getElementById("shareLink").value = url;
   document.getElementById("openLink").href = url;
   document.getElementById("fileWarn").hidden = location.protocol !== "file:";
-  document.getElementById("photoNote").hidden = !d.photo;
+  document.getElementById("photoNote").hidden = !(d.photo || d.logo);
   const slug = fileSlug(d);
   document.getElementById("copyBtn").onclick = () => copy(url);
   document.getElementById("dlPng").onclick = async () => download(await qrPngBlob(url), slug + "_qr.png");

@@ -5,6 +5,7 @@ A single-page web app for making a digital business card. It runs as a static si
 ## Features
 
 - **Profile photo upload**: the photo is cropped to a square and resized in the browser. It's stored in `card.json`, so it appears on the permanent link and on the saved contact. Share links (`#c=`) can't hold pictures, so they show initials instead.
+- **Company logo upload**: the logo keeps its shape and transparency and is resized in the browser. It's shown on a white badge at the top of the card and stored in `card.json`, just like the photo. Share links show the company name instead.
 - **Builder form** with fields for first and last name, job title, company, phone, email, office address, company website, LinkedIn, X/Twitter, Instagram and Facebook. A live preview updates as you type, and you can choose from six color themes.
 - **The card shows only the fields you fill in.**
 - **Share it** with a link (the native share sheet on phones) or a QR code, and use the **QR code** button on the card to show it full screen to someone.
@@ -67,7 +68,7 @@ Links and QR codes made from a local copy point to your own computer, so create 
 
 Every field is optional except `firstName`. `theme` can be `indigo`, `ocean`, `emerald`, `sunset`, `gold` or `slate`.
 
-`photo` holds the uploaded picture as embedded image data (`"data:image/jpeg;base64,..."`), which the builder fills in for you. It can also be a path to an image file in the repository, such as `"photo.jpg"`.
+`photo` holds the uploaded picture as embedded image data (`"data:image/jpeg;base64,..."`), which the builder fills in for you. It can also be a path to an image file in the repository, such as `"photo.jpg"`. `logo` works the same way, for example `"logo.png"` or `"logo.svg"`.
 
 ```json
 {
@@ -84,6 +85,7 @@ Every field is optional except `firstName`. `theme` can be `indigo`, `ocean`, `e
   "instagram": "@janedoe",
   "facebook": "facebook.com/janedoe",
   "theme": "indigo",
-  "photo": "photo.jpg"
+  "photo": "photo.jpg",
+  "logo": "logo.png"
 }
 ```
