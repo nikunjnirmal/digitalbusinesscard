@@ -1,0 +1,4 @@
+# Used by the "Deploy to Netlify" button and Netlify sites linked to this repository.
+[build]
+  command = "node scripts/build.mjs"
+  publish = "dist"

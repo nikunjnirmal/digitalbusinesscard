@@ -1,5 +1,0 @@
-Create online digital business card. host it for free as a single page web app. 
-The business card should be able to share as a link or someone should be able to scan a QR code. I should be able to show the QR code to someone and they can scan which will lead to the digital business card. The page with digital business card should have an option to add to contacts with one click on iOS and Android devices. 
-While creating a business card, offer a form to provide inputs such as First Name, last name, job title, company name, phone number, email address, physical office address, linkedin bio link, company website url, twitter, Instagram and facebook urls as well. 
-While displaying the digital card only show the items provided by the user. Show it like a beautiful business card. 
-The QR code should be permanent so it can be printed on physical business card. 

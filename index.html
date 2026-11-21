@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="qrcode.min.js"></script>
+<script src="card-core.js"></script>
 <style>
 :root {
   --bg: #eef0f6;
@@ -527,13 +528,17 @@ button { font: inherit; cursor: pointer; }
           <b>Want a QR code that never changes? (recommended for printed cards)</b>
           The QR above contains your details in the link, so editing your info later gives you a new QR code. For a permanent one:
           <ol>
-            <li><button class="btn" type="button" id="dlJson" style="padding:6px 10px;font-size:13px">Download card.json + contact.vcf</button></li>
-            <li>Upload <b>both</b> files next to <code>index.html</code> on your site. <code>contact.vcf</code> makes <b>Add to Contacts</b> work in every phone browser.</li>
+            <li><button class="btn" type="button" id="dlJson" style="padding:6px 10px;font-size:13px">Download card.json</button></li>
+            <li id="uploadGh" hidden>Open your repository's upload page, drag <code>card.json</code> onto it, and click <b>Commit changes</b>. Your site updates in about a minute.
+              <div class="btnrow"><a class="btn" id="ghUpload" target="_blank" rel="noopener">Open GitHub upload page</a></div>
+            </li>
+            <li id="uploadOther">Upload <code>card.json</code> next to <code>index.html</code> on your site.</li>
             <li>Print this QR, which points to your site’s main address:
               <div class="btnrow"><button class="btn" type="button" id="dlPermPng">Permanent QR (PNG)</button><button class="btn" type="button" id="dlPermSvg">Permanent QR (SVG)</button></div>
             </li>
           </ol>
-          <div style="margin-top:8px">To update your details later, replace both files. The printed QR stays valid.</div>
+          <div style="margin-top:8px">To update your details later, upload a new <code>card.json</code>. The printed QR stays valid.</div>
+          <div class="hint" style="margin-top:8px">Your site's build step creates the contact file (<code>contact.vcf</code>) and link previews from <code>card.json</code> automatically. If your host doesn't run the build (for example, Netlify Drop), also upload <a href="#" id="dlVcf">contact.vcf</a>.</div>
         </div>
       </section>
     </div>
@@ -560,42 +565,8 @@ button { font: inherit; cursor: pointer; }
 (() => {
 "use strict";
 
-/* ---------------- Data model ---------------- */
-const FIELDS = [
-  ["firstName", "f"], ["lastName", "l"], ["jobTitle", "j"], ["company", "c"],
-  ["phone", "p"], ["email", "e"], ["address", "a"], ["website", "w"],
-  ["linkedin", "li"], ["twitter", "x"], ["instagram", "ig"], ["facebook", "fb"],
-  ["theme", "t"]
-];
-
-const THEMES = {
-  indigo:  ["#4f46e5", "#7c3aed"],
-  ocean:   ["#0369a1", "#0891b2"],
-  emerald: ["#047857", "#0d9488"],
-  sunset:  ["#e11d48", "#f97316"],
-  gold:    ["#b45309", "#d97706"],
-  slate:   ["#1f2937", "#475569"]
-};
-
-function clean(d) {
-  const out = {};
-  if (!d || typeof d !== "object") return out;
-  for (const [k] of FIELDS) {
-    const v = d[k];
-    if (typeof v === "string" && v.trim()) out[k] = v.trim().slice(0, 500);
-  }
-  if (out.theme && !THEMES[out.theme]) delete out.theme;
-  for (const k of ["photo", "logo"]) if (validImage(d[k])) out[k] = d[k].trim();
-  return out;
-}
-// Photo/logo: an embedded image data URL (from upload) or an http(s)/relative image path in card.json.
-function validImage(p) {
-  if (typeof p !== "string") return false;
-  p = p.trim();
-  if (p.startsWith("data:")) return p.length < 1500000 && /^data:image\/(jpeg|png|webp|gif|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(p);
-  if (p.length > 2000 || /[\s"'<>]/.test(p)) return false;
-  return /^https?:\/\//i.test(p) || !/^[a-z][a-z0-9+.-]*:/i.test(p);
-}
+/* ---------------- Shared logic (card-core.js) ---------------- */
+const { FIELDS, THEMES, clean, links, fullName, fileSlug, vEsc, buildVcf } = window.CardCore;
 
 /* ---------------- URL encoding (base64url JSON) ---------------- */
 function encode(d) {
@@ -619,32 +590,9 @@ function decode(str) {
 }
 
 /* ---------------- Link helpers ---------------- */
-function safeUrl(v) {
-  v = (v || "").trim();
-  if (!v) return null;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(v) && !/^https?:\/\//i.test(v)) return null; // block javascript: etc.
-  if (!/^https?:\/\//i.test(v)) v = "https://" + v.replace(/^\/+/, "");
-  try { return new URL(v).href; } catch { return null; }
-}
-function socialUrl(v, domainRe, base) {
-  v = (v || "").trim();
-  if (!v) return null;
-  if (domainRe.test(v)) return safeUrl(v);
-  const handle = v.replace(/^@/, "").replace(/^\/+|\/+$/g, "");
-  if (!/^[\w.\-\/]+$/.test(handle)) return safeUrl(v);
-  return base + handle;
-}
-const links = {
-  website:   v => safeUrl(v),
-  linkedin:  v => socialUrl(v, /linkedin\.com/i, "https://www.linkedin.com/in/"),
-  twitter:   v => socialUrl(v, /(twitter|x)\.com/i, "https://x.com/"),
-  instagram: v => socialUrl(v, /instagram\.com/i, "https://www.instagram.com/"),
-  facebook:  v => socialUrl(v, /(facebook|fb)\.com/i, "https://www.facebook.com/")
-};
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
   (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-function fullName(d) { return [d.firstName, d.lastName].filter(Boolean).join(" "); }
 function initials(d) {
   const src = (d.firstName || d.lastName) ? [d.firstName, d.lastName] : [d.company];
   return src.filter(Boolean).map(s => [...s.trim()][0] || "").join("").toUpperCase().slice(0, 2) || "?";
@@ -755,41 +703,6 @@ function renderCard(d) {
   return card;
 }
 
-/* ---------------- vCard ---------------- */
-function vEsc(s) { return String(s).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;"); }
-// vCard lines must be folded at 75 chars; continuation lines start with a space.
-function fold(line) {
-  if (line.length <= 75) return line;
-  const parts = [line.slice(0, 75)];
-  for (let i = 75; i < line.length; i += 74) parts.push(" " + line.slice(i, i + 74));
-  return parts.join("\r\n");
-}
-function buildVcf(d, photoJpeg) {
-  const L = ["BEGIN:VCARD", "VERSION:3.0"];
-  L.push(`N:${vEsc(d.lastName || "")};${vEsc(d.firstName || "")};;;`);
-  L.push(`FN:${vEsc(fullName(d) || d.company || "Contact")}`);
-  if (d.company) L.push(`ORG:${vEsc(d.company)}`);
-  if (d.jobTitle) L.push(`TITLE:${vEsc(d.jobTitle)}`);
-  if (d.phone) L.push(`TEL;TYPE=CELL,VOICE:${vEsc(d.phone)}`);
-  if (d.email) L.push(`EMAIL;TYPE=INTERNET,WORK:${vEsc(d.email)}`);
-  if (d.address) L.push(`ADR;TYPE=WORK:;;${vEsc(d.address.replace(/\s*\n\s*/g, ", "))};;;;`);
-  const web = links.website(d.website);
-  if (web) L.push(`URL;TYPE=WORK:${web}`);
-  let n = 1;
-  for (const [k, label] of [["linkedin", "LinkedIn"], ["twitter", "X"], ["instagram", "Instagram"], ["facebook", "Facebook"]]) {
-    const u = links[k](d[k]);
-    if (!u) continue;
-    L.push(`item${n}.URL:${u}`, `item${n}.X-ABLabel:${label}`);
-    L.push(`X-SOCIALPROFILE;TYPE=${label.toLowerCase()}:${u}`);
-    n++;
-  }
-  if (photoJpeg) L.push(fold("PHOTO;ENCODING=b;TYPE=JPEG:" + photoJpeg.split(",")[1]));
-  L.push("END:VCARD");
-  return L.join("\r\n") + "\r\n";
-}
-function fileSlug(d) {
-  return (fullName(d) || d.company || "contact").replace(/[^\p{L}\p{N} _-]+/gu, "").trim().replace(/\s+/g, "_") || "contact";
-}
 /* ---------------- Photo processing ---------------- */
 function loadImg(src, cors) {
   return new Promise((res, rej) => {
@@ -917,6 +830,14 @@ async function copy(text) {
   toast("Link copied");
 }
 function siteRoot() { return location.origin + location.pathname; }
+// On GitHub Pages (owner.github.io/repo/), work out the repository so we can link to its upload page.
+function githubRepo() {
+  const m = location.hostname.match(/^([a-z0-9-]+)\.github\.io$/i);
+  if (!m) return null;
+  const first = location.pathname.split("/").filter(Boolean)[0];
+  const repo = first && !/\.html?$/i.test(first) ? first : location.hostname;
+  return { owner: m[1], repo };
+}
 async function loadCardFile() {
   if (location.protocol === "file:") return null;
   try {
@@ -959,6 +880,9 @@ function showCard(d, url, fromFile) {
   vcardPhoto = null;
   photoForVcard(d.photo).then(p => vcardPhoto = p); // ready long before anyone taps "Add to Contacts"
   if (fromFile) findStaticVcf(d); else staticVcfUrl = null;
+  // A published card (from card.json) is the owner's: don't invite visitors into the builder.
+  // The owner edits at <site>/#edit.
+  document.querySelector("#view .foot").hidden = !!fromFile;
 
   const save = document.getElementById("saveBtn");
   save.innerHTML = I.save; save.append(" Add to Contacts");
@@ -1091,11 +1015,17 @@ function showResult(d, url) {
   document.getElementById("copyBtn").onclick = () => copy(url);
   document.getElementById("dlPng").onclick = async () => download(await qrPngBlob(url), slug + "_qr.png");
   document.getElementById("dlSvg").onclick = () => download(new Blob([qrSvg(url)], { type: "image/svg+xml" }), slug + "_qr.svg");
-  document.getElementById("dlJson").onclick = async () => {
+  document.getElementById("dlJson").onclick = () =>
     download(new Blob([JSON.stringify(d, null, 2) + "\n"], { type: "application/json" }), "card.json");
+  document.getElementById("dlVcf").onclick = async e => {
+    e.preventDefault();
     const vcf = buildVcf(d, await photoForVcard(d.photo));
-    setTimeout(() => download(new Blob([vcf], { type: "text/vcard;charset=utf-8" }), "contact.vcf"), 400);
+    download(new Blob([vcf], { type: "text/vcard;charset=utf-8" }), "contact.vcf");
   };
+  const gh = githubRepo();
+  document.getElementById("uploadGh").hidden = !gh;
+  document.getElementById("uploadOther").hidden = !!gh;
+  if (gh) document.getElementById("ghUpload").href = `https://github.com/${gh.owner}/${gh.repo}/upload/main`;
   const root = siteRoot();
   document.getElementById("dlPermPng").onclick = async () => download(await qrPngBlob(root), slug + "_permanent_qr.png");
   document.getElementById("dlPermSvg").onclick = () => download(new Blob([qrSvg(root)], { type: "image/svg+xml" }), slug + "_permanent_qr.svg");
