@@ -1,0 +1,8 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Contact;Test;;;
+FN:Test Contact
+ORG:Card Test
+TEL;TYPE=CELL:+1 555 010 0000
+EMAIL;TYPE=INTERNET:test@example.com
+END:VCARD
