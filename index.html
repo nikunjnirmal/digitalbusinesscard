@@ -186,50 +186,147 @@ button { font: inherit; cursor: pointer; }
 .panel + .panel { margin-top: 20px; }
 .panel h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
 .panel .sub { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
-.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+/* Form: a stack of section cards */
+.form { display: grid; gap: 16px; }
+.fsec {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, .04), 0 12px 32px -24px rgba(17, 24, 39, .25);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.fsec:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: 0 1px 2px rgba(17, 24, 39, .04), 0 18px 40px -24px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.fsec-head { display: flex; gap: 14px; align-items: center; margin-bottom: 18px; }
+.fsec-ic {
+  flex: none; width: 42px; height: 42px; border-radius: 13px;
+  display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 18px -10px var(--accent);
+}
+.fsec-ic svg { width: 20px; height: 20px; }
+.fsec-head h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
+.fsec-head p { margin: 2px 0 0; font-size: 13.5px; color: var(--muted); }
+.opt-title { color: var(--muted); font-weight: 500; font-size: 14px; white-space: nowrap; }
+.privacy [data-icon] { display: inline-flex; }
+.badge {
+  display: inline-block; vertical-align: 2px; margin-left: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 14px; }
 @media (max-width: 560px) { .fields { grid-template-columns: 1fr; } }
 .field.full { grid-column: 1 / -1; }
-.field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.field > label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; }
 .field label .req { color: #e11d48; }
-.field input, .field textarea {
+.field label .opt { color: var(--muted); font-weight: 500; }
+
+/* Inputs with a leading icon (or brand addon) */
+.input { position: relative; }
+.input .ii {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; color: var(--muted); pointer-events: none;
+  transition: color .15s ease;
+}
+.input.area .ii { top: 15px; transform: none; }
+.input .ii svg { width: 18px; height: 18px; display: block; }
+.input input, .input textarea {
   width: 100%;
-  padding: 11px 13px;
+  height: 48px;
+  padding: 0 14px 0 44px;
   font: inherit; font-size: 15px;
   color: var(--text);
   background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
   outline: none;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
-.field textarea { resize: vertical; min-height: 70px; }
-.field input:focus, .field textarea:focus {
+.input textarea { height: auto; min-height: 84px; padding-top: 13px; padding-bottom: 13px; resize: vertical; line-height: 1.45; }
+.input input::placeholder, .input textarea::placeholder { color: color-mix(in srgb, var(--muted) 75%, transparent); }
+.input input:hover, .input textarea:hover { border-color: var(--border); }
+.input input:focus, .input textarea:focus {
+  background: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
 }
-.field input:invalid:not(:placeholder-shown) { border-color: #e11d48; }
-.section-label { grid-column: 1 / -1; margin: 10px 0 -4px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.input:focus-within .ii { color: var(--accent); }
+.input input:invalid:not(:placeholder-shown):not(:focus) { border-color: #e11d48; }
 
-.photo-pick { display: flex; gap: 16px; align-items: center; }
+.input.brand input { padding-left: 60px; }
+.input .addon {
+  position: absolute; left: 6px; top: 6px; bottom: 6px; width: 40px;
+  border-radius: 10px; display: grid; place-items: center; color: #fff; pointer-events: none;
+}
+.input .addon svg { width: 18px; height: 18px; }
+.addon.x  { background: #111; }
+.addon.ig { background: radial-gradient(circle at 30% 110%, #fdc468 0%, #f77737 25%, #e1306c 55%, #833ab4 85%); }
+.addon.fb { background: #1877f2; }
+@media (prefers-color-scheme: dark) { .addon.x { background: #000; box-shadow: inset 0 0 0 1px #333; } }
+
+/* Upload tiles (click or drag & drop) */
+.upload {
+  display: flex; gap: 16px; align-items: center;
+  padding: 14px;
+  border: 1.5px dashed var(--border);
+  border-radius: 16px;
+  background: var(--surface-2);
+  transition: border-color .15s ease, background .15s ease;
+}
+.upload.drag { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.upload-body { min-width: 0; flex: 1; }
+.upload-body b { display: block; font-size: 14px; }
+.upload-body span { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.upload .btnrow { margin-top: 10px; }
+.upload .btn { padding: 8px 14px; font-size: 13.5px; border-radius: 10px; }
 .photo-thumb {
   flex: none; width: 72px; height: 72px; border-radius: 50%;
   display: grid; place-items: center; overflow: hidden;
-  background: var(--surface-2); border: 1px dashed var(--border); color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border); color: var(--muted);
 }
-.photo-thumb svg { width: 28px; height: 28px; }
+.photo-thumb svg { width: 26px; height: 26px; }
 .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.photo-thumb.logo-thumb { width: 120px; height: 64px; border-radius: 12px; padding: 6px; }
-.photo-thumb.logo-thumb:has(img) { background: #fff; border-style: solid; }
+.photo-thumb.logo-thumb { width: 104px; height: 64px; border-radius: 12px; padding: 6px; }
+.photo-thumb.logo-thumb:has(img) { background: #fff; }
 .photo-thumb.logo-thumb img { object-fit: contain; }
-.hint { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
-.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
-.swatch { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--surface); outline: 2px solid transparent; padding: 0; }
+@media (max-width: 420px) { .upload { flex-direction: column; align-items: flex-start; } }
+
+.swatches { display: flex; gap: 12px; flex-wrap: wrap; }
+.swatch {
+  width: 40px; height: 40px; border-radius: 50%; padding: 0;
+  border: 3px solid var(--surface); outline: 2px solid transparent;
+  box-shadow: 0 4px 10px -4px rgba(0,0,0,.35);
+  transition: transform .15s ease, outline-color .15s ease;
+}
+.swatch:hover { transform: scale(1.08); }
 .swatch[aria-pressed="true"] { outline-color: var(--text); }
 
 .preview-col { position: sticky; top: 24px; }
 .preview-col .tag { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px 4px; }
 
-.form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+/* Action bar stays in reach while scrolling the form */
+.form-actions {
+  position: sticky; bottom: 12px; z-index: 5;
+  display: flex; gap: 10px; align-items: center;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 12px 30px -18px rgba(17, 24, 39, .45);
+}
+.form-actions .btn-primary { flex: 1; padding: 14px 18px; }
+.form-actions .privacy { display: none; }
+@media (min-width: 561px) {
+  .form-actions .btn-primary { flex: none; }
+  .form-actions .privacy { display: flex; gap: 6px; align-items: center; margin-left: auto; padding-right: 8px; font-size: 12.5px; color: var(--muted); }
+  .form-actions .privacy svg { width: 14px; height: 14px; }
+}
 
 .result { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 24px; align-items: start; }
 @media (max-width: 560px) { .result { grid-template-columns: 1fr; } }
@@ -296,62 +393,108 @@ button { font: inherit; cursor: pointer; }
 
   <div class="grid">
     <div>
-      <form id="form" class="panel" novalidate autocomplete="on">
-        <h2>Your details</h2>
-        <p class="sub">Everything stays in your browser — nothing is uploaded.</p>
-        <div class="fields">
-          <div class="section-label">About you</div>
-          <div class="field full">
-            <label for="photoBtn">Profile photo</label>
-            <div class="photo-pick">
-              <div class="photo-thumb" id="photoThumb"></div>
-              <div>
-                <div class="btnrow" style="margin-top:0">
-                  <button class="btn" type="button" id="photoBtn">Upload photo</button>
-                  <button class="btn" type="button" id="photoRemove" hidden>Remove</button>
+      <form id="form" class="form" novalidate autocomplete="on">
+
+        <section class="fsec">
+          <div class="fsec-head">
+            <span class="fsec-ic" data-icon="user"></span>
+            <div><h2>About you</h2><p>Your name and role, as people will see them.</p></div>
+          </div>
+          <div class="fields">
+            <div class="field full">
+              <div class="upload" id="photoDrop">
+                <div class="photo-thumb" id="photoThumb"></div>
+                <div class="upload-body">
+                  <b>Profile photo</b>
+                  <span>Drop an image here or upload one. It's cropped to a square automatically.</span>
+                  <div class="btnrow">
+                    <button class="btn" type="button" id="photoBtn">Upload photo</button>
+                    <button class="btn" type="button" id="photoRemove" hidden>Remove</button>
+                  </div>
                 </div>
                 <input id="photoInput" type="file" accept="image/*" hidden>
-                <p class="hint">The photo is cropped to a square and resized in your browser. It's saved in <b>card.json</b>, so it appears on your permanent link and on saved contacts. Share links can't include pictures.</p>
               </div>
             </div>
+            <div class="field"><label for="firstName">First name <span class="req">*</span></label>
+              <div class="input"><span class="ii" data-icon="user"></span><input id="firstName" name="firstName" autocomplete="given-name" placeholder="Jane" required></div></div>
+            <div class="field"><label for="lastName">Last name</label>
+              <div class="input"><span class="ii" data-icon="user"></span><input id="lastName" name="lastName" autocomplete="family-name" placeholder="Doe"></div></div>
+            <div class="field full"><label for="jobTitle">Job title</label>
+              <div class="input"><span class="ii" data-icon="briefcase"></span><input id="jobTitle" name="jobTitle" autocomplete="organization-title" placeholder="Head of Product"></div></div>
           </div>
-          <div class="field"><label for="firstName">First name <span class="req">*</span></label><input id="firstName" name="firstName" autocomplete="given-name" placeholder="Jane" required></div>
-          <div class="field"><label for="lastName">Last name</label><input id="lastName" name="lastName" autocomplete="family-name" placeholder="Doe"></div>
-          <div class="field"><label for="jobTitle">Job title</label><input id="jobTitle" name="jobTitle" autocomplete="organization-title" placeholder="Head of Product"></div>
-          <div class="field"><label for="company">Company name</label><input id="company" name="company" autocomplete="organization" placeholder="Acme Inc."></div>
-          <div class="field full">
-            <label for="logoBtn">Company logo</label>
-            <div class="photo-pick">
-              <div class="photo-thumb logo-thumb" id="logoThumb"></div>
-              <div>
-                <div class="btnrow" style="margin-top:0">
-                  <button class="btn" type="button" id="logoBtn">Upload logo</button>
-                  <button class="btn" type="button" id="logoRemove" hidden>Remove</button>
+        </section>
+
+        <section class="fsec">
+          <div class="fsec-head">
+            <span class="fsec-ic" data-icon="building"></span>
+            <div><h2>Company</h2><p>Your company name and logo, plus a link to your site.</p></div>
+          </div>
+          <div class="fields">
+            <div class="field full"><label for="company">Company name</label>
+              <div class="input"><span class="ii" data-icon="building"></span><input id="company" name="company" autocomplete="organization" placeholder="Acme Inc."></div></div>
+            <div class="field full">
+              <div class="upload" id="logoDrop">
+                <div class="photo-thumb logo-thumb" id="logoThumb"></div>
+                <div class="upload-body">
+                  <b>Company logo</b>
+                  <span>A PNG or SVG with a transparent background works best.</span>
+                  <div class="btnrow">
+                    <button class="btn" type="button" id="logoBtn">Upload logo</button>
+                    <button class="btn" type="button" id="logoRemove" hidden>Remove</button>
+                  </div>
                 </div>
                 <input id="logoInput" type="file" accept="image/*" hidden>
-                <p class="hint">A PNG or SVG with a transparent background works best. The logo appears at the top of your card, and like your photo it's saved in <b>card.json</b>.</p>
               </div>
             </div>
+            <div class="field full"><label for="website">Web Address</label>
+              <div class="input"><span class="ii" data-icon="web"></span><input id="website" name="website" inputmode="url" autocomplete="url" placeholder="acme.com"></div></div>
           </div>
+        </section>
 
-          <div class="section-label">Contact</div>
-          <div class="field"><label for="phone">Phone number</label><input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+1 555 123 4567"></div>
-          <div class="field"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" placeholder="jane@acme.com"></div>
-          <div class="field full"><label for="address">Office address</label><textarea id="address" name="address" autocomplete="street-address" placeholder="123 Market St, Suite 400, San Francisco, CA 94105"></textarea></div>
-          <div class="field full"><label for="website">Company website</label><input id="website" name="website" inputmode="url" placeholder="acme.com"></div>
+        <section class="fsec">
+          <div class="fsec-head">
+            <span class="fsec-ic" data-icon="phone"></span>
+            <div><h2>Contact details</h2><p>How people can reach you.</p></div>
+          </div>
+          <div class="fields">
+            <div class="field"><label for="phone">Phone number</label>
+              <div class="input"><span class="ii" data-icon="phone"></span><input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+1 555 123 4567"></div></div>
+            <div class="field"><label for="email">Email address</label>
+              <div class="input"><span class="ii" data-icon="email"></span><input id="email" name="email" type="email" autocomplete="email" placeholder="jane@acme.com"></div></div>
+            <div class="field full"><label for="address">Office address</label>
+              <div class="input area"><span class="ii" data-icon="pin"></span><textarea id="address" name="address" autocomplete="street-address" placeholder="123 Market St, Suite 400, San Francisco, CA 94105"></textarea></div></div>
+            <div class="field full"><label for="linkedin">LinkedIn</label>
+              <div class="input"><span class="ii" data-icon="linkedin"></span><input id="linkedin" name="linkedin" inputmode="url" placeholder="linkedin.com/in/janedoe"></div></div>
+          </div>
+        </section>
 
-          <div class="section-label">Social</div>
-          <div class="field"><label for="linkedin">LinkedIn</label><input id="linkedin" name="linkedin" inputmode="url" placeholder="linkedin.com/in/janedoe"></div>
-          <div class="field"><label for="twitter">X / Twitter</label><input id="twitter" name="twitter" inputmode="url" placeholder="@janedoe or URL"></div>
-          <div class="field"><label for="instagram">Instagram</label><input id="instagram" name="instagram" inputmode="url" placeholder="@janedoe or URL"></div>
-          <div class="field"><label for="facebook">Facebook</label><input id="facebook" name="facebook" inputmode="url" placeholder="facebook.com/janedoe"></div>
+        <section class="fsec">
+          <div class="fsec-head">
+            <span class="fsec-ic" data-icon="at"></span>
+            <div><h2>Social Media Handles <span class="opt-title">(for business owners)</span></h2><p>Your business's social accounts. Enter a handle like <b>@acme</b> or paste the full profile link.</p></div>
+          </div>
+          <div class="fields">
+            <div class="field full"><label for="twitter">X / Twitter</label>
+              <div class="input brand"><span class="addon x" data-icon="twitter"></span><input id="twitter" name="twitter" inputmode="url" autocapitalize="off" placeholder="@yourbusiness"></div></div>
+            <div class="field full"><label for="instagram">Instagram</label>
+              <div class="input brand"><span class="addon ig" data-icon="instagram"></span><input id="instagram" name="instagram" inputmode="url" autocapitalize="off" placeholder="@yourbusiness"></div></div>
+            <div class="field full"><label for="facebook">Facebook</label>
+              <div class="input brand"><span class="addon fb" data-icon="facebook"></span><input id="facebook" name="facebook" inputmode="url" autocapitalize="off" placeholder="facebook.com/yourbusiness"></div></div>
+          </div>
+        </section>
 
-          <div class="section-label">Style</div>
-          <div class="field full"><div class="swatches" id="swatches" role="group" aria-label="Card color"></div></div>
-        </div>
+        <section class="fsec">
+          <div class="fsec-head">
+            <span class="fsec-ic" data-icon="palette"></span>
+            <div><h2>Card color</h2><p>Pick a color theme for your card.</p></div>
+          </div>
+          <div class="swatches" id="swatches" role="group" aria-label="Card color"></div>
+        </section>
+
         <div class="form-actions">
           <button class="btn btn-primary" type="submit" id="createBtn"></button>
-          <button class="btn" type="button" id="resetBtn">Clear form</button>
+          <button class="btn" type="button" id="resetBtn">Clear</button>
+          <span class="privacy"><span data-icon="lock"></span>Everything stays in your browser</span>
         </div>
       </form>
 
@@ -521,6 +664,11 @@ const I = {
   save:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4M12 2v13"/></svg>',
   qr:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  briefcase: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+  at: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>',
+  palette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 10-10c0 2.8-2.2 4-4 4h-1.8a2 2 0 0 0-1.5 3.3c.4.5.3 1.4-.2 1.9-.6.5-1.5.8-2.5.8z"/><circle cx="7.5" cy="10.5" r="1" fill="currentColor"/><circle cx="10.5" cy="6.5" r="1" fill="currentColor"/><circle cx="15.5" cy="7.5" r="1" fill="currentColor"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
   building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/></svg>',
   camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>'
@@ -585,7 +733,7 @@ function renderCard(d) {
   if (d.phone) row("phone", "Phone", d.phone, "tel:" + d.phone.replace(/[^\d+*#,;]/g, ""));
   if (d.email) row("email", "Email", d.email, "mailto:" + d.email);
   const web = links.website(d.website);
-  if (web) row("web", "Website", prettyUrl(web), web, true);
+  if (web) row("web", "Web Address", prettyUrl(web), web, true);
   if (d.address) {
     const q = encodeURIComponent(d.address.replace(/\s*\n\s*/g, ", "));
     row("pin", "Office", d.address.replace(/\s*\n\s*/g, ", "),
@@ -871,6 +1019,20 @@ function makePicker(key, word, icon, process) {
     catch { toast("Couldn't read that image. Try a JPG or PNG."); }
   });
   rm.onclick = () => { picker.set(null); updatePreview(); };
+  // Drag & drop onto the upload tile
+  const drop = $("Drop");
+  if (drop) {
+    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("drag"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+    drop.addEventListener("drop", e => {
+      e.preventDefault(); drop.classList.remove("drag");
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const dt = new DataTransfer(); dt.items.add(file);
+      input.files = dt.files;
+      input.dispatchEvent(new Event("change"));
+    });
+  }
   picker.set(null);
   pickers[key] = picker;
 }
@@ -892,6 +1054,7 @@ function setupBuilder() {
     b.onclick = () => { selectTheme(name); updatePreview(); };
     sw.append(b);
   }
+  for (const el of document.querySelectorAll("#form [data-icon]")) el.innerHTML = I[el.dataset.icon] || "";
   const cb = document.getElementById("createBtn");
   cb.innerHTML = I.spark; cb.append(" Create my card");
 
