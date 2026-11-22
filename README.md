@@ -28,7 +28,14 @@ On this project's GitHub page, click the green **Use this template** button, the
 
 In your new repository, go to **Settings → Pages**. Under **Build and deployment → Source**, choose **GitHub Actions**.
 
-That's it. Your site is now live at `https://<your-username>.github.io/<repository-name>/`. It may take a minute the first time; if it isn't up yet, go to the **Actions** tab, click **Publish card**, then **Run workflow**.
+From now on, every change you make to the repository (like uploading `card.json` in step 3) publishes your site automatically. You never need to run anything by hand.
+
+To publish the site for the first time before you've uploaded anything:
+1. Open the **Actions** tab.
+2. Click **Publish card** in the list of workflows on the left. On a phone, open the **All workflows** menu at the top to find it.
+3. Click the **Run workflow** button on the right, then the green **Run workflow** button.
+
+Your site is live at `https://<your-username>.github.io/<repository-name>/` about a minute later.
 
 ### 3. Create your card
 

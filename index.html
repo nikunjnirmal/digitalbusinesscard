@@ -175,6 +175,14 @@ button { font: inherit; cursor: pointer; }
 .actions { width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
 .actions .btn-primary { grid-column: 1 / -1; padding: 16px; font-size: 16px; }
 .foot { margin-top: 28px; font-size: 13px; color: var(--muted); }
+.preview-banner {
+  width: 100%; max-width: 420px; margin-bottom: 16px;
+  padding: 14px 16px; border-radius: 16px; font-size: 13.5px; line-height: 1.45;
+  background: color-mix(in srgb, #f59e0b 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, #f59e0b 45%, transparent);
+}
+.preview-banner b { display: block; margin-bottom: 4px; font-size: 14px; }
+.preview-banner code { font-size: 12.5px; background: var(--surface-2); padding: 1px 6px; border-radius: 6px; }
 .foot a { color: var(--muted); }
 
 /* ---------- Builder ---------- */
@@ -378,6 +386,10 @@ button { font: inherit; cursor: pointer; }
 
 <!-- Card view -->
 <main id="view" class="view" hidden>
+  <div class="preview-banner" id="previewBanner" hidden>
+    <b>Preview: your photo and logo are only visible on this device.</b>
+    Share links can't carry pictures, so other people will see your initials and company name instead. To show your photo and logo to everyone, publish <code>card.json</code> (see the steps under “Want a QR code that never changes?” in the builder).
+  </div>
   <div id="viewCard"></div>
   <div class="actions">
     <button id="saveBtn" class="btn btn-primary" type="button"></button>
@@ -879,6 +891,7 @@ function showCard(d, url, fromFile) {
 
   vcardPhoto = null;
   photoForVcard(d.photo).then(p => vcardPhoto = p); // ready long before anyone taps "Add to Contacts"
+  document.getElementById("previewBanner").hidden = true;
   if (fromFile) findStaticVcf(d); else staticVcfUrl = null;
   // A published card (from card.json) is the owner's: don't invite visitors into the builder.
   // The owner edits at <site>/#edit.
@@ -998,9 +1011,29 @@ function setupBuilder() {
     if (!first.value.trim()) { first.focus(); toast("Please enter your first name"); return; }
     if (email.value.trim() && !email.checkValidity()) { email.focus(); toast("Please check the email address"); return; }
     const d = formData();
-    const url = siteRoot() + "#c=" + encode(d);
-    showResult(d, url);
+    const code = encode(d);
+    rememberPreviewImages(code, d);
+    showResult(d, siteRoot() + "#c=" + code);
   });
+}
+
+// Share links can't hold images, so keep the creator's photo/logo in this browser only,
+// tied to that exact link, so "Open card" previews what the published card will look like.
+const PREVIEW_KEY = "dbc-preview-images";
+function rememberPreviewImages(code, d) {
+  try {
+    if (d.photo || d.logo) localStorage.setItem(PREVIEW_KEY, JSON.stringify({ code, photo: d.photo || null, logo: d.logo || null }));
+    else localStorage.removeItem(PREVIEW_KEY);
+  } catch {}
+}
+function previewImages(code) {
+  try {
+    const p = JSON.parse(localStorage.getItem(PREVIEW_KEY) || "null");
+    if (!p || p.code !== code) return null;
+    const out = clean({ firstName: "x", photo: p.photo, logo: p.logo });
+    delete out.firstName;
+    return Object.keys(out).length ? out : null;
+  } catch { return null; }
 }
 
 function showResult(d, url) {
@@ -1050,7 +1083,14 @@ async function route() {
   }
   if (params.get("c")) {
     const d = decode(params.get("c"));
-    if (d && Object.keys(d).length) return showCard(d, location.href);
+    if (d && Object.keys(d).length) {
+      // On the device that created this link, show the photo/logo too, clearly marked as a preview.
+      const imgs = previewImages(params.get("c"));
+      if (imgs) Object.assign(d, imgs);
+      showCard(d, location.href);
+      document.getElementById("previewBanner").hidden = !imgs;
+      return;
+    }
   }
   const fileCard = await loadCardFile();
   if (fileCard) return showCard(fileCard, siteRoot(), true);

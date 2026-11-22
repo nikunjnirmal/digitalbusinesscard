@@ -40,10 +40,22 @@ for (const name of fs.readdirSync(ROOT)) {
 }
 
 /* ---------- card ---------- */
-const cardPath = path.join(ROOT, "card.json");
+// Browsers rename repeat downloads ("card (1).json", "card-2.json"); accept those too.
+let cardPath = path.join(ROOT, "card.json");
 if (!fs.existsSync(cardPath)) {
-  console.log("No card.json yet: built the site without a card (visitors see the builder).");
-  process.exit(0);
+  const renamed = fs.readdirSync(ROOT).filter(n => /^card[\s_-]*(\(\d+\)|\d+)?\.json$/i.test(n));
+  if (renamed.length > 1) {
+    console.error(`Found several card files (${renamed.join(", ")}). Keep one and name it card.json.`);
+    process.exit(1);
+  }
+  if (!renamed.length) {
+    console.log("No card.json yet: built the site without a card (visitors see the builder).");
+    process.exit(0);
+  }
+  cardPath = path.join(ROOT, renamed[0]);
+  console.log(`Using ${renamed[0]} as card.json.`);
+  fs.rmSync(path.join(DIST, renamed[0]), { force: true });
+  fs.copyFileSync(cardPath, path.join(DIST, "card.json"));
 }
 let card;
 try {
