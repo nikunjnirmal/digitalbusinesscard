@@ -353,6 +353,26 @@ button { font: inherit; cursor: pointer; }
 .note b { display: block; margin-bottom: 4px; }
 .note ol { margin: 6px 0 0; padding-left: 20px; }
 .note code { font-size: 13px; background: var(--surface-2); padding: 1px 6px; border-radius: 6px; }
+.gh-status { margin-top: 10px; font-size: 14px; }
+.gh-status:empty { display: none; }
+.gh-status.ok { color: #047857; }
+.gh-status.err { color: #b91c1c; }
+@media (prefers-color-scheme: dark) { .gh-status.ok { color: #34d399; } .gh-status.err { color: #f87171; } }
+.gh-setup { margin-top: 14px; padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.gh-setup ul { margin: 6px 0; padding-left: 18px; }
+.gh-setup li { margin: 3px 0; }
+.gh-setup li b, .manual li b { display: inline; margin: 0; }
+.gh-setup a { color: var(--accent); font-weight: 600; }
+.gh-fields { display: grid; gap: 6px; margin: 8px 0 4px; }
+.gh-fields label { font-size: 13px; font-weight: 600; margin-top: 6px; }
+.gh-fields input:not([type="checkbox"]) {
+  width: 100%; height: 44px; padding: 0 12px; font: inherit; font-size: 14px;
+  color: var(--text); background: var(--surface-2); border: 1.5px solid transparent; border-radius: 12px; outline: none;
+}
+.gh-fields input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
+.gh-check { display: flex; gap: 8px; align-items: center; font-weight: 500 !important; }
+.manual { margin-top: 14px; }
+.manual summary { cursor: pointer; font-weight: 600; font-size: 14px; }
 .warn { background: color-mix(in srgb, #f59e0b 12%, var(--surface)); border-color: color-mix(in srgb, #f59e0b 40%, transparent); }
 
 /* ---------- QR modal ---------- */
@@ -537,20 +557,59 @@ button { font: inherit; cursor: pointer; }
           Links and QR codes can't hold pictures. To show them, use the permanent option below. Your photo and logo are saved inside <code>card.json</code>.
         </div>
         <div class="note">
-          <b>Want a QR code that never changes? (recommended for printed cards)</b>
-          The QR above contains your details in the link, so editing your info later gives you a new QR code. For a permanent one:
-          <ol>
-            <li><button class="btn" type="button" id="dlJson" style="padding:6px 10px;font-size:13px">Download card.json</button></li>
-            <li id="uploadGh" hidden>Open your repository's upload page, drag <code>card.json</code> onto it, and click <b>Commit changes</b>. Your site updates in about a minute.
-              <div class="btnrow"><a class="btn" id="ghUpload" target="_blank" rel="noopener">Open GitHub upload page</a></div>
-            </li>
-            <li id="uploadOther">Upload <code>card.json</code> next to <code>index.html</code> on your site.</li>
-            <li>Print this QR, which points to your site’s main address:
-              <div class="btnrow"><button class="btn" type="button" id="dlPermPng">Permanent QR (PNG)</button><button class="btn" type="button" id="dlPermSvg">Permanent QR (SVG)</button></div>
-            </li>
-          </ol>
-          <div style="margin-top:8px">To update your details later, upload a new <code>card.json</code>. The printed QR stays valid.</div>
-          <div class="hint" style="margin-top:8px">Your site's build step creates the contact file (<code>contact.vcf</code>) and link previews from <code>card.json</code> automatically. If your host doesn't run the build (for example, Netlify Drop), also upload <a href="#" id="dlVcf">contact.vcf</a>.</div>
+          <b>Publish your card (recommended for printed cards)</b>
+          The QR above contains your details in the link, so editing your info later gives you a new QR code. Publishing puts your card, with your photo and logo, at your site's main address. That address never changes, so its QR code is safe to print.
+
+          <!-- One-click publishing straight to the GitHub repository -->
+          <div class="gh" id="ghBox">
+            <div class="btnrow" style="margin-top:12px">
+              <button class="btn btn-primary" type="button" id="publishBtn">Publish to GitHub</button>
+              <button class="btn" type="button" id="ghSettingsBtn" hidden>Publishing settings</button>
+            </div>
+            <div class="gh-status" id="ghStatus" role="status" aria-live="polite"></div>
+
+            <div class="gh-setup" id="ghSetup" hidden>
+              <b>One-time setup: let this page publish to your repository</b>
+              <ol>
+                <li><a id="ghTokenLink" target="_blank" rel="noopener">Create a GitHub access token</a>. On that page:
+                  <ul>
+                    <li><b>Repository access:</b> choose <b>Only select repositories</b>, then pick <span id="ghRepoName">your card's repository</span>.</li>
+                    <li><b>Permissions:</b> under Repository permissions, set <b>Contents</b> to <b>Read and write</b>.</li>
+                    <li>Click <b>Generate token</b> and copy it.</li>
+                  </ul>
+                </li>
+                <li>Paste it here:</li>
+              </ol>
+              <div class="gh-fields">
+                <label for="ghRepo">Repository</label>
+                <input id="ghRepo" placeholder="your-username/your-repository" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <label for="ghToken">Access token</label>
+                <input id="ghToken" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <label class="gh-check"><input type="checkbox" id="ghRemember" checked> Remember on this device</label>
+              </div>
+              <p class="hint">Only remember it on your own phone or computer: anyone using this browser could change your card. The token can only edit this one repository. To revoke it, delete it in GitHub's token settings.</p>
+              <div class="btnrow">
+                <button class="btn btn-primary" type="button" id="ghSaveBtn">Save and publish</button>
+                <button class="btn" type="button" id="ghForgetBtn" hidden>Forget token on this device</button>
+              </div>
+            </div>
+          </div>
+
+          <details class="manual">
+            <summary>Or upload card.json yourself</summary>
+            <ol>
+              <li><button class="btn" type="button" id="dlJson" style="padding:6px 10px;font-size:13px">Download card.json</button></li>
+              <li id="uploadGh" hidden>Open your repository's upload page, drag <code>card.json</code> onto it, and click <b>Commit changes</b>.
+                <div class="btnrow"><a class="btn" id="ghUpload" target="_blank" rel="noopener">Open GitHub upload page</a></div>
+              </li>
+              <li id="uploadOther">Upload <code>card.json</code> next to <code>index.html</code> on your site.</li>
+            </ol>
+            <div class="hint">Your site's build step creates the contact file (<code>contact.vcf</code>) and link previews from <code>card.json</code> automatically. If your host doesn't run the build (for example, Netlify Drop), also upload <a href="#" id="dlVcf">contact.vcf</a>.</div>
+          </details>
+
+          <div style="margin-top:14px"><b style="display:inline;margin:0">Print this QR code.</b> It points to your site's main address:
+            <div class="btnrow"><button class="btn" type="button" id="dlPermPng">Permanent QR (PNG)</button><button class="btn" type="button" id="dlPermSvg">Permanent QR (SVG)</button></div>
+          </div>
         </div>
       </section>
     </div>
@@ -1017,6 +1076,144 @@ function setupBuilder() {
   });
 }
 
+/* ---------------- Publish to GitHub ---------------- */
+// Saves card.json straight into the GitHub repository with a fine-grained access token
+// limited to that repository (Contents: read & write). The token stays in this browser.
+const GH_KEY = "dbc-github";
+function ghLoad() {
+  try { return JSON.parse(localStorage.getItem(GH_KEY) || sessionStorage.getItem(GH_KEY) || "null"); } catch { return null; }
+}
+function ghSave(cfg, remember) {
+  try {
+    ghForget();
+    (remember ? localStorage : sessionStorage).setItem(GH_KEY, JSON.stringify(cfg));
+  } catch {}
+}
+function ghForget() { try { localStorage.removeItem(GH_KEY); sessionStorage.removeItem(GH_KEY); } catch {} }
+
+function b64utf8(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+async function ghApi(cfg, path, opts = {}) {
+  let r;
+  try {
+    r = await fetch(`https://api.github.com/repos/${cfg.repo}${path}`, {
+      ...opts,
+      cache: "no-store",
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${cfg.token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(opts.body ? { "Content-Type": "application/json" } : {})
+      }
+    });
+  } catch { const e = new Error("network"); e.status = 0; throw e; }
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(body.message || r.statusText); e.status = r.status; throw e; }
+  return body;
+}
+async function publishCard(cfg, d) {
+  const { default_branch: branch } = await ghApi(cfg, "");
+  const content = b64utf8(JSON.stringify(d, null, 2) + "\n");
+  for (let attempt = 0; ; attempt++) {
+    let sha;
+    try { sha = (await ghApi(cfg, `/contents/card.json?ref=${encodeURIComponent(branch)}`)).sha; }
+    catch (e) { if (e.status !== 404) throw e; } // no card.json yet: create it
+    try {
+      return await ghApi(cfg, "/contents/card.json", {
+        method: "PUT",
+        body: JSON.stringify({ message: "Update business card", content, branch, ...(sha ? { sha } : {}) })
+      });
+    } catch (e) {
+      if ((e.status === 409 || e.status === 422) && attempt === 0) continue; // file changed meanwhile: retry once
+      throw e;
+    }
+  }
+}
+function ghErrorText(e, repo) {
+  if (e.status === 0) return "Couldn't reach GitHub. Check your internet connection and try again.";
+  if (e.status === 401) return "GitHub didn't accept the access token. It may be mistyped, expired or deleted. Create a new one and paste it below.";
+  if (e.status === 403 || e.status === 404) return `This token can't change "${repo}". Check that the repository name is right, the token includes this repository, and Contents is set to "Read and write".`;
+  return `GitHub returned an error: ${e.message}. Try again, or use "Upload card.json yourself" below.`;
+}
+
+function setupPublish(d) {
+  const $ = id => document.getElementById(id);
+  const status = (msg, kind) => {
+    const s = $("ghStatus");
+    s.className = "gh-status" + (kind ? " " + kind : "");
+    s.replaceChildren(...[].concat(msg));
+  };
+  const guess = githubRepo();
+  const saved = ghLoad();
+  const repoValue = () => $("ghRepo").value.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$|\/$/g, "");
+  const refreshSetupText = () => {
+    const repo = repoValue();
+    $("ghRepoName").textContent = repo ? `"${repo.split("/")[1] || repo}"` : "your card's repository";
+    const p = new URLSearchParams({
+      name: `Business card${repo ? " (" + repo + ")" : ""}`,
+      description: "Lets the business card builder publish card.json",
+      expires_in: "365",
+      contents: "write"
+    });
+    if (repo.includes("/")) p.set("target_name", repo.split("/")[0]);
+    $("ghTokenLink").href = "https://github.com/settings/personal-access-tokens/new?" + p;
+  };
+  const showSetup = show => {
+    $("ghSetup").hidden = !show;
+    if (show) { refreshSetupText(); ($("ghRepo").value ? $("ghToken") : $("ghRepo")).focus(); }
+  };
+  const refreshButtons = () => {
+    const has = !!ghLoad();
+    $("ghSettingsBtn").hidden = !has;
+    $("ghForgetBtn").hidden = !has;
+  };
+
+  $("ghRepo").value = (saved && saved.repo) || (guess ? `${guess.owner}/${guess.repo}` : "");
+  $("ghRepo").oninput = refreshSetupText;
+  $("ghToken").value = "";
+  status("");
+  showSetup(false);
+  refreshButtons();
+
+  async function run(cfg, remember) {
+    const btns = [$("publishBtn"), $("ghSaveBtn")];
+    btns.forEach(b => b.disabled = true);
+    status("Publishing…");
+    try {
+      await publishCard(cfg, d);
+      if (remember !== undefined) ghSave(cfg, remember);
+      showSetup(false);
+      refreshButtons();
+      const site = siteRoot();
+      status(["Published! ", h("a", { href: site, target: "_blank", rel: "noopener" }, "Your card"),
+        " updates in about a minute. ",
+        h("a", { href: `https://github.com/${cfg.repo}/actions`, target: "_blank", rel: "noopener" }, "Watch progress")], "ok");
+    } catch (e) {
+      status(ghErrorText(e, cfg.repo), "err");
+      if (e.status === 401 || e.status === 403 || e.status === 404) { if (remember === undefined) ghForget(); refreshButtons(); showSetup(true); }
+    } finally {
+      btns.forEach(b => b.disabled = false);
+    }
+  }
+
+  $("publishBtn").onclick = () => {
+    const cfg = ghLoad();
+    if (cfg) run(cfg); else { status(""); showSetup(true); }
+  };
+  $("ghSettingsBtn").onclick = () => showSetup($("ghSetup").hidden);
+  $("ghSaveBtn").onclick = () => {
+    const repo = repoValue(), token = $("ghToken").value.trim();
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { status('Enter the repository as "username/repository-name".', "err"); $("ghRepo").focus(); return; }
+    if (!token) { status("Paste your access token first.", "err"); $("ghToken").focus(); return; }
+    run({ repo, token }, $("ghRemember").checked);
+  };
+  $("ghForgetBtn").onclick = () => { ghForget(); refreshButtons(); $("ghToken").value = ""; status("The token was removed from this device."); };
+}
+
 // Share links can't hold images, so keep the creator's photo/logo in this browser only,
 // tied to that exact link, so "Open card" previews what the published card will look like.
 const PREVIEW_KEY = "dbc-preview-images";
@@ -1055,6 +1252,7 @@ function showResult(d, url) {
     const vcf = buildVcf(d, await photoForVcard(d.photo));
     download(new Blob([vcf], { type: "text/vcard;charset=utf-8" }), "contact.vcf");
   };
+  setupPublish(d);
   const gh = githubRepo();
   document.getElementById("uploadGh").hidden = !gh;
   document.getElementById("uploadOther").hidden = !!gh;

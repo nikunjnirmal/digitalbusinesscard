@@ -57,7 +57,18 @@ In the builder, click **Permanent QR (SVG)** for print shops, or **(PNG)** for a
 
 ### Updating your card later
 
-Go to `https://<your-username>.github.io/<repository-name>/#edit`. The builder opens with your current details filled in. Change what you need, download the new `card.json`, and upload it again in the same way. Your printed QR code keeps working.
+Go to `https://<your-username>.github.io/<repository-name>/#edit`. The builder opens with your current details filled in. Change what you need, click **Create my card**, then publish. Your printed QR code keeps working.
+
+**One-click publishing (recommended).** Click **Publish to GitHub**. The first time, the builder walks you through creating a GitHub access token:
+- Under **Repository access**, choose **Only select repositories** and pick your card's repository.
+- Under **Repository permissions**, set **Contents** to **Read and write**.
+
+Paste the token into the builder. After that, every update is a single click on that device.
+- **Who can use it:** only tick **Remember on this device** on your own phone or computer, since anyone using that browser could change your card.
+- **What it can do:** the token can only edit that one repository. You can revoke it any time in GitHub under **Settings → Developer settings → Personal access tokens**.
+- **When it expires:** tokens last up to a year. When yours expires, the builder asks for a new one.
+
+**Without a token:** click **Or upload card.json yourself**, download the file, and upload it on GitHub as in step 3. For small text changes, you can also open `card.json` on GitHub, click the pencil icon, and edit it there.
 
 ## Good to know
 
